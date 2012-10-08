@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <parameters>
+        <parameter key="sli.extjsintegration.sorting_field_resolver.class">Sli\ExtJsIntegrationBundle\Service\AnnotationSortingFieldResolver</parameter>
+        <parameter key="sli.extjsintegration.method_invocation_parameters_provider.class">Sli\ExtJsIntegrationBundle\Service\DataMapping\AnnotationMethodInvocationParametersProvider</parameter>
+        <parameter key="sli.extjsintegration.entity_data_mapper.class">Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService</parameter>
+        <parameter key="sli.extjsintegration.extjs_query_builder.class">Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder</parameter>
+    </parameters>
+
+    <services>
+        <service id="sli.extjsintegration.sorting_field_resolver"
+                 class="%sli.extjsintegration.sorting_field_resolver.class%">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+        
+        <service id="sli.extjsintegration.method_invocation_parameters_provider"
+                 class="%sli.extjsintegration.method_invocation_parameters_provider.class%">
+            <argument type="service" id="service_container" />
+        </service>
+
+        <service id="sli.extjsintegration.entity_data_mapper"
+                 class="%sli.extjsintegration.entity_data_mapper.class%">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="security.context" />
+            <argument type="service" id="sli.aux.javabeans_ofm" />
+            <argument type="service" id="sli.extjsintegration.method_invocation_parameters_provider" />
+        </service>
+
+        <service id="sli.extjsintegration.extjs_query_builder"
+                 class="%sli.extjsintegration.extjs_query_builder.class%">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="sli.extjsintegration.entity_data_mapper" />
+            <argument type="service" id="sli.extjsintegration.sorting_field_resolver" />
+        </service>
+    </services>
+</container>
