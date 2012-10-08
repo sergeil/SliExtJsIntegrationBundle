@@ -23,6 +23,7 @@ Installation
 
 2. In your ``/deps`` file add following dependencies:
 
+    ```
     [SliAuxBundle]
         git=http://github.com/sergeil/SliAuxBundle.git
         target=/bundles/Sli/AuxBundle
@@ -30,4 +31,5 @@ Installation
     [SliExtJsIntegrationBundle]
         git=http://github.com/sergeil/SliExtJsIntegrationBundle.git
         target=/bundles/Sli/ExtJsIntegrationBundle
+    ```
 
