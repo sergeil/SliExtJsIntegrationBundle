@@ -33,3 +33,8 @@ Installation
         target=/bundles/Sli/ExtJsIntegrationBundle
     ```
 
+3. Add bundles to your ``/app/AppKernel``:
+    ```
+    new Sli\ExtJsIntegrationBundle\SliExtJsIntegrationBundle(),
+    new Sli\AuxBundle\SliAuxBundle(),
+    ```
