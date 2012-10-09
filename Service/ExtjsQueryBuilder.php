@@ -11,6 +11,43 @@ use Doctrine\ORM\QueryBuilder;
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
  * in turn are build by Ext.data.Store.
  *
+ * Say you have a store that looks similar to this one:
+ * var store = Ext.create('Ext.data.Store', {
+ *    remoteFilter: true,
+ *    remoteSort: true,
+ *
+ *   fields: [
+ *        'id', 'firstname', 'lastname'
+ *    ],
+ *
+ *    proxy: {
+ *        type: 'direct',
+ *        // we are using ExtDirect here
+ *        directFn: Actions.AcmeUsers.list,
+ *        reader: {
+ *            type: 'json',
+ *            root: 'items',
+ *            totalProperty: 'total'
+ *        }
+ *    }
+ * });
+ *
+ * // now you can something like that. Note that you can use all
+ *
+ * // for filter value you gotta use expression:value formatted string, where 'expression' is a valid method-name of
+ * // Doctrine\DBAL\Query\Expression\ExpressionBuilder.
+ * // Also, if you bind a store to a grid, then by clicking on a column header ExtJs will automatically
+ * // interact with the associated store to send proper sorting request. In order to start using pagination,
+ * // take a look at http://docs.sencha.com/ext-js/4-1/#!/api/Ext.toolbar.Paging
+ *
+ * store.filter('firstname', 'like:John*');
+ * store.clearFilter();
+ *
+ * store.filter('id', 'eq:2');
+ * store.clearFilter();
+ *
+ * store.filter('id', 'notIn:1,2');
+ *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
 class ExtjsQueryBuilder
