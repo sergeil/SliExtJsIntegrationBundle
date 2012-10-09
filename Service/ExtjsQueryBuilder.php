@@ -5,6 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\Service;
 use Doctrine\ORM\EntityManager;
 use Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
@@ -212,6 +213,85 @@ class ExtjsQueryBuilder
         }
 
         return $qb;
+    }
+
+    /**
+     * @param \Doctrine\ORM\QueryBuilder $qb
+     * @param callable $hydrator
+     * @param string|null $rootFetchEntityFqcn
+     * @return array   Response that should be sent back to the client side. You need to have a properly
+     *                 configured proxy for your store, it should be of json type with the following config:
+     *                 { type: 'json', root: 'items', totalProperty: 'total' }
+     */
+    public function buildResponseWithPagination(QueryBuilder $qb, \Closure $hydrator, $rootFetchEntityFqcn = null)
+    {
+        $countQueryBuilder = $this->buildCountQueryBuilder($qb, $rootFetchEntityFqcn);
+
+        $hydratedItems = array();
+        foreach ($qb->getQuery()->getResult() as $item) {
+            $hydratedItems[] = $hydrator($item);
+        }
+
+        return array(
+            'success' => true,
+            'total' => $countQueryBuilder->getQuery()->getSingleScalarResult(),
+            'items' => $hydratedItems
+        );
+    }
+
+    /**
+     * @throws \RuntimeException
+     * @param \Doctrine\ORM\QueryBuilder $queryBuilder
+     * @param string|null $rootFetchEntityFqcn
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function buildCountQueryBuilder(QueryBuilder $queryBuilder, $rootFetchEntityFqcn = null)
+    {
+        $countQueryBuilder = clone $queryBuilder;
+        $parts = $countQueryBuilder->getDQLParts();
+
+        if (!isset($parts['select']) || count($parts['select']) == 0) {
+            throw new \RuntimeException('Provided $queryBuilder doesn\'t contain SELECT part.');
+        }
+        if (!isset($parts['from'])) {
+            throw new \RuntimeException('Provided $queryBuilder doesn\'t contain FROM part.');
+        }
+        if (null === $rootFetchEntityFqcn && count($parts['select']) > 1) {
+            throw new \RuntimeException(
+                'Provided $queryBuilder contains more than fetch entity in its SELECT statement but you haven\'t provided $rootFetchEntityFqcn'
+            );
+        }
+
+        $rootAlias = null;
+        if (count($parts['select']) > 1) {
+            foreach ($parts['from'] as $fromPart) {
+                list($entityFqcn, $alias) = explode(' ', $fromPart);
+                if ($entityFqcn === $rootFetchEntityFqcn) {
+                    $rootAlias = $alias;
+                }
+            }
+        } else {
+            $rootAlias = $parts['select'][0];
+
+            $isFound = false;
+            foreach ($parts['from'] as $fromPart) {
+                list($entityFqcn, $alias) = explode(' ', $fromPart);
+                if ($alias === $rootAlias) {
+                    $isFound = true;
+                }
+            }
+            if (!$isFound) {
+                throw new \RuntimeException(
+                    "Unable to resolve fetch entity FQCN for alias '$rootAlias'. Do you have your SELECT and FROM parts properly built ?"
+                );
+            }
+        }
+        if (null === $rootAlias) {
+            throw new \RuntimeException("Unable to resolve alias for entity $rootFetchEntityFqcn");
+        }
+
+        $countQueryBuilder->add('select', "COUNT ({$parts['select'][0]})");
+        return $countQueryBuilder;
     }
 
     public function getResult($entityFqcn, array $params)
