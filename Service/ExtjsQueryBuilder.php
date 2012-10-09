@@ -8,6 +8,9 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\QueryBuilder;
 
 /**
+ * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
+ * in turn are build by Ext.data.Store.
+ *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
 class ExtjsQueryBuilder
@@ -68,8 +71,8 @@ class ExtjsQueryBuilder
     }
 
     /**
-     * @param $entityFqcn
-     * @param array $params
+     * @param string $entityFqcn  Root fetch entity fully-qualified-class-name
+     * @param array $params  Parameters that were sent from client-side
      * @return \Doctrine\ORM\QueryBuilder
      * @throws \RuntimeException
      */
@@ -217,10 +220,13 @@ class ExtjsQueryBuilder
 
     /**
      * @param \Doctrine\ORM\QueryBuilder $qb
-     * @param callable $hydrator
-     * @param string|null $rootFetchEntityFqcn
+     * @param callable $hydrator  An instance of \Closure ( anonymous functions ) that will be used to hydrate fetched
+     *                            from database entities. Entity that needs to be hydrated will be passed as a first and
+     *                            only argument to the function.
+     * @param string|null $rootFetchEntityFqcn  If your fetch query contains several SELECT entries, then you need
+          *                                          to specify which entity we must use to build COUNT query with
      * @return array   Response that should be sent back to the client side. You need to have a properly
-     *                 configured proxy for your store, it should be of json type with the following config:
+     *                 configured proxy's reader for your store, it should be of json type with the following config:
      *                 { type: 'json', root: 'items', totalProperty: 'total' }
      */
     public function buildResponseWithPagination(QueryBuilder $qb, \Closure $hydrator, $rootFetchEntityFqcn = null)
@@ -241,8 +247,11 @@ class ExtjsQueryBuilder
 
     /**
      * @throws \RuntimeException
-     * @param \Doctrine\ORM\QueryBuilder $queryBuilder
-     * @param string|null $rootFetchEntityFqcn
+     * @param \Doctrine\ORM\QueryBuilder $queryBuilder  Fetch query-builder, in other words - instance of QueryBuilder
+     *                                                  that will be used to actually execute SELECT query for response
+     *                                                  you are going to send back
+     * @param string|null $rootFetchEntityFqcn  If your fetch query contains several SELECT entries, then you need
+     *                                          to specify which entity we must use to build COUNT query with
      * @return \Doctrine\ORM\QueryBuilder
      */
     public function buildCountQueryBuilder(QueryBuilder $queryBuilder, $rootFetchEntityFqcn = null)

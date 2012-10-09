@@ -38,3 +38,13 @@ Installation
     new Sli\ExtJsIntegrationBundle\SliExtJsIntegrationBundle(),
     new Sli\AuxBundle\SliAuxBundle(),
     ```
+
+What's inside
+=============
+For now, there's not much yet:
+
+ * Service\ExtjsQueryBuilder -- Builds proper Doctrine queries for your ``Ext.data.Store`` on client-side. Makes it possible
+                                to easily leverage 'remoteFilter', 'remoteSort' as well as pagination. Also, the class is smart
+                                enough to build proper queries when you need to sort(ORDER BY) an associated entity
+
+Please read inline phpDoc for more information how to use classes
