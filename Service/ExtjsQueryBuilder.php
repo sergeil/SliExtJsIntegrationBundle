@@ -137,7 +137,7 @@ class ExtjsQueryBuilder
         if (isset($params['start'])) {
             $start = $params['start'];
             if (isset($params['page']) && isset($params['limit'])) {
-                $start += ($params['page']-1) * $params['limit'];
+                $start = ($params['page']-1) * $params['limit'];
             }
             $qb->setFirstResult($start);
         }
@@ -248,6 +248,8 @@ class ExtjsQueryBuilder
     public function buildCountQueryBuilder(QueryBuilder $queryBuilder, $rootFetchEntityFqcn = null)
     {
         $countQueryBuilder = clone $queryBuilder;
+        $countQueryBuilder->setFirstResult(null);
+        $countQueryBuilder->setMaxResults(null);
         $parts = $countQueryBuilder->getDQLParts();
 
         if (!isset($parts['select']) || count($parts['select']) == 0) {
