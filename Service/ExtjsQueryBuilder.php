@@ -118,6 +118,8 @@ class ExtjsQueryBuilder
         $metadata = $this->em->getClassMetadata($entityFqcn);
         $availableFields = array_merge($metadata->getFieldNames(), $metadata->getAssociationNames());
 
+        $model = new Model($entityFqcn, $this->em);
+
         $qb = $this->em->createQueryBuilder();
         $expr = $qb->expr();
 
@@ -130,7 +132,10 @@ class ExtjsQueryBuilder
                 }
 
                 list($propertyName, $direction) = array_values($entry);
-                if (!in_array($propertyName, $availableFields)) {
+//                if (!in_array($propertyName, $availableFields)) {
+//                    continue;
+//                }
+                if (!$model->isValidExpression($propertyName)) {
                     continue;
                 }
 

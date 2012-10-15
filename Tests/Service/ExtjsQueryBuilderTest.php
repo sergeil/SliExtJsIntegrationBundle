@@ -8,79 +8,26 @@ use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder;
 
-/**
- * @Orm\Entity
- * @Orm\Table(name="sli_extjsintegration_dummyuser")
- */
-class DummyUser
-{
-    /**
-     * @Orm\Id
-     * @Orm\Column(type="integer")
-     * @Orm\GeneratedValue(strategy="AUTO")
-     */
-    public $id;
-
-    /**
-     * @Orm\Column(type="string", nullable=true)
-     */
-    public $firstname;
-
-    /**
-     * @Orm\Column(type="string", nullable=true)
-     */
-    public $lastname;
-
-    static public function clazz()
-    {
-        return get_called_class();
-    }
-}
+require_once __DIR__.'/DummyEntities.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class ExtjsQueryBuilderTest extends \Symfony\Bundle\FrameworkBundle\Test\WebTestCase
+class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 {
-    /* @var \Doctrine\ORM\EntityManager */
-    static private $em;
-
-    /* @var \Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder $builder */
-    static private $builder;
-
     static public function setUpBeforeClass()
     {
-        /* @var \Symfony\Component\HttpKernel\Kernel $kernel */
-        $kernel = static::createKernel();
-        $kernel->boot();
-        /* @var \Doctrine\ORM\EntityManager $em */
-        $em = $kernel->getContainer()->get('doctrine.orm.entity_manager');
-        $em = clone $em;
+        parent::setUpBeforeClass();
 
-        self::$em = $em;
-
-        // injecting a new metadata driver for our test entity
-        $annotationDriver = new AnnotationDriver(
-            $kernel->getContainer()->get('annotation_reader'),
-            array(__DIR__)
-        );
-
-        $metadataFactory = $em->getMetadataFactory();
-        $reflMetadataFactory = new \ReflectionClass($metadataFactory);
-        $reflInitMethod = $reflMetadataFactory->getMethod('initialize');
-        $reflInitMethod->setAccessible(true);
-        $reflInitMethod->invoke($metadataFactory);
-        $reflDriverProp = $reflMetadataFactory->getProperty('driver');
-        $reflDriverProp->setAccessible(true);
-        /* @var \Doctrine\ORM\Mapping\Driver\DriverChain $driver */
-        $driver = $reflDriverProp->getValue($metadataFactory);
-        $driver->addDriver($annotationDriver, __NAMESPACE__);
+        $metadataFactory = self::$em->getMetadataFactory();
 
         $dummyUserMetadata = $metadataFactory->getMetadataFor(DummyUser::clazz());
+        $dummyAddressMetadata = $metadataFactory->getMetadataFor(DummyAddress::clazz());
+        $dummyCountryMetadata = $metadataFactory->getMetadataFor(DummyCountry::clazz());
 
         // updating database
-        $st = new SchemaTool($em);
-        $st->updateSchema(array($dummyUserMetadata), true);
+        $st = new SchemaTool(self::$em);
+        $st->updateSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata), true);
 
         // populating
         foreach (array('john doe', 'jane doe', 'vassily pupkin') as $fullname) {
@@ -88,18 +35,19 @@ class ExtjsQueryBuilderTest extends \Symfony\Bundle\FrameworkBundle\Test\WebTest
             $e = new DummyUser();
             $e->firstname = $exp[0];
             $e->lastname = $exp[1];
-            $em->persist($e);
+
+            if ('john' == $exp[0]) {
+                $address = new DummyAddress();
+                $address->street = 'Blahblah';
+                $address->zip = '1111111';
+                $e->address = $address;
+            }
+
+            self::$em->persist($e);
         }
-        $em->flush();
+        self::$em->flush();
 
-        self::$builder = $kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
-    }
-
-    static public function tearDownAfterClass()
-    {
-        $dummyUserMetadata = self::$em->getClassMetadata(DummyUser::clazz());
-        $st = new SchemaTool(self::$em);
-        $st->dropSchema(array($dummyUserMetadata));
+        self::$builder = self::$kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
     }
 
     public function testBuildQueryBuilderEmptyFilter()
@@ -156,6 +104,20 @@ class ExtjsQueryBuilderTest extends \Symfony\Bundle\FrameworkBundle\Test\WebTest
         $this->assertEquals(2, count($users));
         $this->assertEquals(3, $users[0]->id);
         $this->assertEquals(1, $users[1]->id);
+    }
+
+    public function testBuildQueryBuilderWhereUserAddressZip()
+    {
+        $db = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'lastname', 'value' => 'eq:doe'),
+                array('property' => 'address.zip', 'value' => 'like:11%')
+            )
+        ));
+
+        $users = $db->getQuery()->getResult();
+        $this->assertTrue(is_array($users));
+        $this->assertEquals(1, $users);
     }
 
     public function testBuildCountQueryBuilder()
