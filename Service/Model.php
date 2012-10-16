@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\Service;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
@@ -57,16 +58,27 @@ class Model
 
     public function allocateAlias($expression)
     {
-        if (!$this->isValidExpression($expression)) {
-            throw new \RuntimeException("'$expression' doesn't seem to be a valid expression for {$this->fqcn}!");
+        $parsedExpression = explode('.', $expression);
+
+        $meta = $this->em->getClassMetadata($this->fqcn);
+        foreach ($parsedExpression as $index=>$propertyName) {
+            if (!$meta->hasAssociation($propertyName)) {
+                throw new \RuntimeException(sprintf(
+                    "Error during parsing of '$expression' expression. Entity '%s' doesn't have association '%s'.",
+                    $meta->getName(), $propertyName
+                ));
+            }
+
+            $mapping = $meta->getAssociationMapping($propertyName);
+            $meta = $this->em->getClassMetadata($mapping['targetEntity']);
+
+            $currentExpression = implode('.', array_slice($parsedExpression, 0, $index+1));
+            if (!$this->resolveExpressionToAlias($expression)) {
+                $this->doAllocateAlias($currentExpression);
+            }
         }
 
-        $alias = array_search($expression, $this->allocatedAliases);
-        if ($alias) {
-            return $alias;
-        }
-
-        return $this->doAllocateAlias($expression);
+        return $this->resolveExpressionToAlias($expression);
     }
 
     protected function doAllocateAlias($expression)
@@ -80,7 +92,7 @@ class Model
      * @param string $alias
      * @return string|null Expression for the provided $alias, if $alias is not found, NULL is returned
      */
-    public function resolveAlias($alias)
+    public function resolveAliasToExpression($alias)
     {
         return isset($this->allocatedAliases[$alias]) ? $this->allocatedAliases[$alias] : null;
     }
@@ -89,7 +101,7 @@ class Model
      * @param $expression
      * @return string|false  Alias for a given $expression, if expression is not found, then FALSE is returned
      */
-    public function resolveExpression($expression)
+    public function resolveExpressionToAlias($expression)
     {
         return array_search($expression, $this->allocatedAliases);
     }
@@ -107,28 +119,42 @@ class Model
         }
 
         if (strpos($expression, '.') !== false) { // associative expression
-            $parsed = explode('.', $expression);
-            $fqcn = $this->fqcn;
-            foreach ($parsed as $index=>$propertyName) {
-                $meta = $this->em->getClassMetadata($fqcn);
-                $currentExpression = implode('.', array_slice($parsed, 0, $index+1));
-
-                if ($meta->hasAssociation($propertyName)) {
-                    if ((count($parsed)-1) == $index) {
-                        throw new \RuntimeException("You can't use associations in queries but their scalars!");
-                    }
-                    $mapping = $meta->getAssociationMapping($propertyName);
-                    $fqcn = $mapping['targetEntity'];
-
-                    $this->allocateAlias($currentExpression);
-                } else {
-                    $currentExpression = implode('.', array_slice($parsed, 0, $index));
-                    $alias = $this->resolveExpression($currentExpression);
-                    return $alias.'.'.$propertyName;
-                }
-            }
+            $parsedExpression = explode('.', $expression);
+            $propertyName = array_pop($parsedExpression);
+            return $this->allocateAlias(implode('.', $parsedExpression)).'.'.$propertyName;
         } else {
             return $this->getRootAlias().'.'.$expression;
+        }
+    }
+
+    public function injectJoins(QueryBuilder $qb, $injectSelects = true)
+    {
+        $i=0;
+        foreach ($this->allocatedAliases as $alias=>$expression) {
+            $parsedExpression = explode('.', $expression);
+            if (0 == $i) {
+                $qb->leftJoin($this->rootAlias.'.'.$expression, $alias);
+            } else if (count($parsedExpression) == 1) {
+                $qb->leftJoin($this->rootAlias.'.'.$parsedExpression[0], $alias);
+            } else {
+                $previousAlias = array_keys($this->allocatedAliases);
+                $previousAlias = $previousAlias[$i-1];
+                $qb->leftJoin($previousAlias.'.'.$parsedExpression[count($parsedExpression)-1], $alias);
+            }
+            $i++;
+        }
+
+        if ($injectSelects) {
+            $selects = array();
+            foreach ($qb->getDQLPart('select') as $select) {
+                /* @var \Doctrine\ORM\Query\Expr\Select $select */
+                $selects[] = trim($select->__toString());
+            }
+            foreach ($this->allocatedAliases as $alias=>$expression) {
+                if (!in_array($alias, $selects)) {
+                    $qb->addSelect($alias);
+                }
+            }
         }
     }
 }

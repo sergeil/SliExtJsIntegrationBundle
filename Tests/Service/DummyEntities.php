@@ -62,7 +62,8 @@ class DummyAddress
     public $street;
 
     /**
-     * @Orm\ManyToOne(targetEntity="DummyCountry")
+     * @var DummyCountry
+     * @Orm\ManyToOne(targetEntity="DummyCountry", cascade={"PERSIST"})
      */
     public $country;
 

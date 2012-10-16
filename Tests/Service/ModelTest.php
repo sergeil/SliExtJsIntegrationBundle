@@ -36,14 +36,22 @@ class ModelTest  extends AbstractDatabaseTestCase
 
     public function testResolveUnexistingAlias()
     {
-        $this->assertNull($this->model->resolveAlias('jx'));
+        $this->assertNull($this->model->resolveAliasToExpression('jx'));
     }
 
-    public function testAllocateAliasAndThenResolveAlias()
+    /**
+     * @expectedException RuntimeException
+     */
+    public function testAllocateAliasForNotExistingAssociation()
     {
-        $alias = $this->model->allocateAlias('address.country.name');
+        $this->model->allocateAlias('address.foo');
+    }
+
+    public function testAllocateAliasAndThenResolveAliasToExpression()
+    {
+        $alias = $this->model->allocateAlias('address.country');
         $this->assertNotNull($alias);
-        $this->assertSame('address.country.name', $this->model->resolveAlias($alias));
+        $this->assertSame('address.country', $this->model->resolveAliasToExpression($alias));
     }
 
     public function testGetDqlPropertyName()
@@ -51,5 +59,21 @@ class ModelTest  extends AbstractDatabaseTestCase
         $this->assertEquals('e.firstname', $this->model->getDqlPropertyName('firstname'));
         $this->assertEquals('j1.name', $this->model->getDqlPropertyName('address.country.name'));
         $this->assertEquals('j0.zip', $this->model->getDqlPropertyName('address.zip'));
+    }
+
+    public function testInjectJoinsAndExecuteQuery()
+    {
+        $qb = self::$em->createQueryBuilder();
+        $qb->select('e')
+           ->from(DummyUser::clazz(), 'e');
+
+        $dqlPropName = $this->model->getDqlPropertyName('address.country.name');
+        $this->model->injectJoins($qb);
+
+        $dqlParts = $qb->getDQLParts();
+
+        $this->assertArrayHasKey('e', $dqlParts['join']);
+        $this->assertEquals(2, count($dqlParts['join']['e']));
+        $this->assertEquals(3, count($dqlParts['select']));
     }
 }

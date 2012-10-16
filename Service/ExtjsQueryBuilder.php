@@ -225,15 +225,17 @@ class ExtjsQueryBuilder
                 }
 
                 $sanitizedFieldName = $this->sanitizeDqlFieldName($name);
-                if (!$sanitizedFieldName) {
-                    continue;
-                } else if (!in_array($sanitizedFieldName, $availableFields)) {
-                    throw new \RuntimeException(
-                        "There's no field with name '$sanitizedFieldName' found in model '$entityFqcn'."
-                    );
-                }
+//                if (!$sanitizedFieldName) {
+//                    continue;
+//                } else if (!in_array($sanitizedFieldName, $availableFields)) {
+//                    throw new \RuntimeException(
+//                        "There's no field with name '$sanitizedFieldName' found in model '$entityFqcn'."
+//                    );
+//                }
+//
+//                $fieldName = 'e.'.$sanitizedFieldName;
 
-                $fieldName = 'e.'.$sanitizedFieldName;
+                $fieldName = $model->getDqlPropertyName($name);
 
                 if (in_array($comparatorName, array('isNull', 'isNotNull'))) {
                     $andExpr->add(
@@ -252,6 +254,14 @@ class ExtjsQueryBuilder
                 $qb->setParameters($valuesToBind);
             }
         }
+
+        if (isset($params['fetch']) && is_array($params['fetch'])) {
+            foreach ($params['fetch'] as $expression) {
+                $qb->addSelect($model->allocateAlias($expression));
+            }
+        }
+
+        $model->injectJoins($qb, false);
 
         if (count($orderStms) > 0) {
             $qb->add('orderBy', implode(', ', $orderStms));
