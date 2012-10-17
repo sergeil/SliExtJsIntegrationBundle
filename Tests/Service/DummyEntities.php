@@ -28,6 +28,7 @@ class DummyUser
     public $lastname;
 
     /**
+     * @var DummyAddress
      * @Orm\OneToOne(targetEntity="DummyAddress", cascade={"PERSIST"})
      */
     public $address;

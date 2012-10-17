@@ -8,13 +8,14 @@ use Doctrine\ORM\QueryBuilder;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class Model
+class ExpressionManager
 {
     private $fqcn;
     private $em;
 
     private $rootAlias;
     public $allocatedAliases = array();
+    private $validatedExpressions = array();
 
     public function __construct($fqcn, EntityManager $em, $rootAlias = 'e')
     {
@@ -32,6 +33,14 @@ class Model
      * @param string $expression
      */
     public function isValidExpression($expression)
+    {
+        if (!isset($this->validatedExpressions[$expression])) {
+            $this->validatedExpressions[$expression] = $this->doIsValidExpression($expression);
+        }
+        return $this->validatedExpressions[$expression];
+    }
+
+    protected function doIsValidExpression($expression)
     {
         if (strpos($expression, '.') !== false) { //
             $parsed = explode('.', $expression);
@@ -56,6 +65,18 @@ class Model
         }
     }
 
+    private function validateExpression($expression)
+    {
+        if (!$this->isValidExpression($expression)) {
+            throw new \RuntimeException("'$expression' doesn't look to be a valid expression for entity {$this->fqcn}.");
+        }
+    }
+
+    /**
+     * @param string $expression
+     * @return string
+     * @throws \RuntimeException
+     */
     public function allocateAlias($expression)
     {
         $parsedExpression = explode('.', $expression);
@@ -114,9 +135,7 @@ class Model
      */
     public function getDqlPropertyName($expression)
     {
-        if (!$this->isValidExpression($expression)) {
-            throw new \RuntimeException("'$expression' doesn't seem to be a valid expression for {$this->fqcn}!");
-        }
+        $this->validateExpression($expression);
 
         if (strpos($expression, '.') !== false) { // associative expression
             $parsedExpression = explode('.', $expression);
@@ -156,5 +175,54 @@ class Model
                 }
             }
         }
+    }
+
+    /**
+     * @throws \RuntimeException
+     * @param string $expression
+     * @return array  Doctrine's mapping
+     */
+    public function getMapping($expression)
+    {
+        $this->validateExpression($expression);
+
+        $meta = $this->em->getClassMetadata($this->fqcn);
+        $parsedExpression = explode('.', $expression);
+        foreach ($parsedExpression as $index=>$propertyName) {
+            $mapping = $meta->hasAssociation($propertyName)
+                     ? $meta->getAssociationMapping($propertyName)
+                     : $meta->getFieldMapping($propertyName);
+
+            if ($meta->hasAssociation($propertyName)) {
+                $meta = $this->em->getClassMetadata($mapping['targetEntity']);
+            }
+
+            if ((count($parsedExpression)-1) == $index) {
+                return $mapping;
+            }
+        }
+    }
+
+    public function isAssociation($expression)
+    {
+        $this->validateExpression($expression);
+
+        $meta = $this->em->getClassMetadata($this->fqcn);
+        $parsedExpression = explode('.', $expression);
+        foreach ($parsedExpression as $index=>$propertyName) {
+            $mapping = $meta->hasAssociation($propertyName)
+                     ? $meta->getAssociationMapping($propertyName)
+                     : $meta->getFieldMapping($propertyName);
+
+            if ($meta->hasAssociation($propertyName)) {
+                if ((count($parsedExpression)-1) == $index) {
+                    return true;
+                }
+
+                $meta = $this->em->getClassMetadata($mapping['targetEntity']);
+            }
+        }
+
+        return false;
     }
 }

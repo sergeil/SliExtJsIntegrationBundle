@@ -5,21 +5,21 @@ namespace Sli\ExtJsIntegrationBundle\Tests\Service;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use Sli\ExtJsIntegrationBundle\Service\Model;
+use Sli\ExtJsIntegrationBundle\Service\ExpressionManager;
 
 require_once __DIR__.'/DummyEntities.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class ModelTest  extends AbstractDatabaseTestCase
+class ExpressionManagerTest  extends AbstractDatabaseTestCase
 {
     /* @var \Sli\ExtJsIntegrationBundle\Service\Model */
     private $model;
 
     public function setUp()
     {
-        $this->model = new Model(DummyUser::clazz(), self::$em);
+        $this->model = new ExpressionManager(DummyUser::clazz(), self::$em);
     }
 
     public function testIsValidExpression()
@@ -75,5 +75,40 @@ class ModelTest  extends AbstractDatabaseTestCase
         $this->assertArrayHasKey('e', $dqlParts['join']);
         $this->assertEquals(2, count($dqlParts['join']['e']));
         $this->assertEquals(3, count($dqlParts['select']));
+    }
+
+    public function testGetMapping()
+    {
+        $addressMapping = $this->model->getMapping('address');
+        $addressCountry  = $this->model->getMapping('address.country');
+        $addressZip = $this->model->getMapping('address.zip');
+        $firstname = $this->model->getMapping('firstname');
+
+        $this->assertNotNull($addressMapping);
+        $this->assertTrue(is_array($addressMapping));
+        $this->assertArrayHasKey('targetEntity', $addressMapping);
+        $this->assertEquals(DummyAddress::clazz(), $addressMapping['targetEntity']);
+
+        $this->assertNotNull($addressCountry);
+        $this->assertTrue(is_array($addressCountry));
+        $this->assertArrayHasKey('targetEntity', $addressCountry);
+        $this->assertEquals(DummyCountry::clazz(), $addressCountry['targetEntity']);
+
+        $this->assertNotNull($addressZip);
+        $this->assertTrue(is_array($addressZip));
+        $this->assertArrayHasKey('fieldName', $addressZip);
+        $this->assertEquals('zip', $addressZip['fieldName']);
+
+        $this->assertNotNull($firstname);
+        $this->assertTrue(is_array($firstname));
+        $this->assertArrayHasKey('fieldName', $firstname);
+        $this->assertEquals('firstname', $firstname['fieldName']);
+    }
+
+    public function testIsAssociation()
+    {
+        $this->assertTrue($this->model->isAssociation('address'));
+        $this->assertTrue($this->model->isAssociation('address.country'));
+        $this->assertFalse($this->model->isAssociation('address.zip'));
     }
 }

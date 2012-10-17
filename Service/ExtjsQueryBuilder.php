@@ -77,22 +77,9 @@ class ExtjsQueryBuilder
         return $this->buildQueryBuilder($entityFqcn, $params)->getQuery();
     }
 
-    protected function convertValue(ClassMetadataInfo $metadata, $fieldName, $value)
+    protected function convertValue(ExpressionManager $expressionManager, $expression, $value)
     {
-        $mapping = array();
-        if ($metadata->hasField($fieldName)) {
-            $mapping = $metadata->getFieldMapping($fieldName);
-        } else if ($metadata->hasAssociation($fieldName)) {
-            $mapping = $metadata->getAssociationMapping($fieldName);
-        } else {
-            throw new \RuntimeException(
-                sprintf(
-                    "Unable to apply filter for field %s::%s, unable to find mapping for the field.",
-                    $metadata->getName(), $fieldName
-                )
-            );
-        }
-
+        $mapping = $expressionManager->getMapping($expression);
         return $this->mapper->convertValue($value, $mapping['type']);
     }
 
@@ -118,7 +105,7 @@ class ExtjsQueryBuilder
         $metadata = $this->em->getClassMetadata($entityFqcn);
         $availableFields = array_merge($metadata->getFieldNames(), $metadata->getAssociationNames());
 
-        $model = new Model($entityFqcn, $this->em);
+        $expressionManager = new ExpressionManager($entityFqcn, $this->em);
 
         $qb = $this->em->createQueryBuilder();
         $expr = $qb->expr();
@@ -135,7 +122,7 @@ class ExtjsQueryBuilder
 //                if (!in_array($propertyName, $availableFields)) {
 //                    continue;
 //                }
-                if (!$model->isValidExpression($propertyName)) {
+                if (!$expressionManager->isValidExpression($propertyName)) {
                     continue;
                 }
 
@@ -220,7 +207,10 @@ class ExtjsQueryBuilder
 
                 // if this is association field, then sometimes there could be just 'no-value'
                 // state which is conventionally marked as '-' value
-                if ($metadata->hasAssociation($name) && '-' === $value) {
+//                if ($metadata->hasAssociation($name) && '-' === $value) {
+//                    continue;
+//                }
+                if ($expressionManager->isAssociation($name) && '-' === $value) {
                     continue;
                 }
 
@@ -235,7 +225,7 @@ class ExtjsQueryBuilder
 //
 //                $fieldName = 'e.'.$sanitizedFieldName;
 
-                $fieldName = $model->getDqlPropertyName($name);
+                $fieldName = $expressionManager->getDqlPropertyName($name);
 
                 if (in_array($comparatorName, array('isNull', 'isNotNull'))) {
                     $andExpr->add(
@@ -245,7 +235,8 @@ class ExtjsQueryBuilder
                     $andExpr->add(
                         $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
                     );
-                    $valuesToBind[] = $this->convertValue($metadata, $sanitizedFieldName, $value);
+//                    $valuesToBind[] = $this->convertValue($metadata, $sanitizedFieldName, $value);
+                    $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
                 }
             }
 
@@ -257,11 +248,11 @@ class ExtjsQueryBuilder
 
         if (isset($params['fetch']) && is_array($params['fetch'])) {
             foreach ($params['fetch'] as $expression) {
-                $qb->addSelect($model->allocateAlias($expression));
+                $qb->addSelect($expressionManager->allocateAlias($expression));
             }
         }
 
-        $model->injectJoins($qb, false);
+        $expressionManager->injectJoins($qb, false);
 
         if (count($orderStms) > 0) {
             $qb->add('orderBy', implode(', ', $orderStms));

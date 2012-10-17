@@ -122,16 +122,33 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuildQueryBuilderWhereUserAddressZip()
     {
-        $db = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
                 array('property' => 'lastname', 'value' => 'eq:doe'),
-                array('property' => 'address.zip', 'value' => 'like:11%')
+                array('property' => 'address.zip', 'value' => 'like:10%')
             )
         ));
 
-        $users = $db->getQuery()->getResult();
+        $users = $qb->getQuery()->getResult();
         $this->assertTrue(is_array($users));
-        $this->assertEquals(1, $users);
+        $this->assertEquals(1, count($users));
+        /* @var DummyUser $user */
+        $user = $users[0];
+        $this->assertEquals('doe', $user->lastname);
+        $this->assertNotNull($user->address);
+        $this->assertEquals('1010', $user->address->zip);
+    }
+
+    public function testBuildQueryBuilderWithSkipAssocFilter()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'address', 'value' => 'eq:-')
+            )
+        ));
+
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(3, count($users));
     }
 
     public function testBuildCountQueryBuilder()

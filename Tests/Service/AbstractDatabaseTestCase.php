@@ -75,7 +75,7 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
                 $address->country->name = 'Fairy land';
 
                 $address->street = 'Blahblah';
-                $address->zip = '1111111';
+                $address->zip = '1010';
                 $e->address = $address;
             }
 
