@@ -4,7 +4,6 @@ namespace Sli\ExtJsIntegrationBundle\Service\DataMapping;
 
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\Security\Core\SecurityContext;
-use Sli\ExtJsIntegrationBundle\Entity\User;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Sli\AuxBundle\Util\Toolkit;
@@ -44,7 +43,7 @@ class EntityDataMapperService
     {
         if ($clientValue != '') {
             $p = $this->getUserPreferences();
-            $format = $p[User::SETTINGS_DATE_FORMAT];
+            $format = $p['dateFormat'];
 
             $clientValue = \DateTime::createFromFormat($format, $clientValue);
             if (!$clientValue) {
