@@ -65,7 +65,8 @@ class EntityDataMapperService
             case 'date':
                 return $this->convertDate($clientValue);
             case 'datetime':
-                throw new \RuntimeException('No support for mapping "datetime" field yet!');
+                return $this->convertDate($clientValue);
+//                throw new \RuntimeException('No support for mapping "datetime" field yet!');
         }
 
         return $clientValue;
