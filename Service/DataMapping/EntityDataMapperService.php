@@ -10,6 +10,9 @@ use Sli\AuxBundle\Util\Toolkit;
 use Sli\AuxBundle\Util\JavaBeansObjectFieldsManager;
 
 /**
+ * In order for this class to work, your security principal ( implementation of UserInterface ),
+ * must implement {@class PreferencesAwareUserInterface}
+ *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
 class EntityDataMapperService
@@ -29,13 +32,22 @@ class EntityDataMapperService
         $this->paramsProvider = $paramsProvider;
     }
 
+    /**
+     * @throws \RuntimeException
+     * @return array
+     */
     protected function getUserPreferences()
     {
-        /* @var User $u */
+        /* @var PreferencesAwareUserInterface $u */
         $u = $this->sc->getToken()->getUser();
         if (!$u) {
             throw new \RuntimeException('No authenticated user available in your session.');
+        } else if (!($u instanceof PreferencesAwareUserInterface)) {
+            throw new \RuntimeException(
+                'Currently authenticated user must implement PreferencesAwareUserInterface !'
+            );
         }
+
         return $u->getPreferences();
     }
 
@@ -43,7 +55,14 @@ class EntityDataMapperService
     {
         if ($clientValue != '') {
             $p = $this->getUserPreferences();
-            $format = $p['dateFormat'];
+
+            $keyName = PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT;
+            if (!isset($p[$keyName])) {
+                throw new \RuntimeException(
+                    sprintf('User preferences must contain configuration for "%s"', $keyName)
+                );
+            }
+            $format = $p[$keyName];
 
             $clientValue = \DateTime::createFromFormat($format, $clientValue);
             if (!$clientValue) {
