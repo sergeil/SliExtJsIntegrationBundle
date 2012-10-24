@@ -103,7 +103,6 @@ class ExtjsQueryBuilder
     public function buildQueryBuilder($entityFqcn, array $params)
     {
         $metadata = $this->em->getClassMetadata($entityFqcn);
-        $availableFields = array_merge($metadata->getFieldNames(), $metadata->getAssociationNames());
 
         $expressionManager = new ExpressionManager($entityFqcn, $this->em);
 
@@ -112,7 +111,6 @@ class ExtjsQueryBuilder
 
         $orderStms = array(); // contains ready DQL orderBy statement that later will be joined together
         if (isset($params['sort'])) {
-            $orderConds = array(); // sanitized ones
             foreach ($params['sort'] as $entry) { // sanitizing and filtering
                 if (!isset($entry['property']) || !isset($entry['direction'])) {
                     continue;
@@ -130,41 +128,18 @@ class ExtjsQueryBuilder
                     continue;
                 }
 
-                $orderConds[$propertyName] = $direction;
-            }
-
-            $indexedAliases = array(); // for association properties only
-            $selectParams = array('e'); // 'e' goes for the root entity
-            foreach ($orderConds as $propertyName=>$direction) { // generating data required for proper SELECT stmt
                 if (in_array($propertyName, $metadata->getAssociationNames())) {
-                    $dqlAlias = 'j'.count($orderStms);
-                    $selectParams[] = $dqlAlias;
-                    $indexedAliases[$propertyName] = $dqlAlias;
-
-                    // data cannot be ordered by an association itself, but by a field
-                    // from the associated entity
-                    $orderField = $this->sortingFieldResolver->resolve($entityFqcn, $propertyName);
-                    $orderStms[] = $dqlAlias.'.'.$orderField.' '.$direction;
+                    $associatedScalarProperty = $this->sortingFieldResolver->resolve($entityFqcn, $propertyName);
+                    $alias = $expressionManager->allocateAlias($propertyName);
+                    $orderStms[] = $alias.'.'.$associatedScalarProperty.' '.$direction;
                 } else {
-                    $orderStms[] = 'e.'.$propertyName.' '.$direction;
+                    $orderStms[] = $expressionManager->getDqlPropertyName($propertyName).' '.$direction;
                 }
             }
-
-            foreach ($selectParams as $alias) {
-                $qb->addSelect($alias);
-            }
-
-            $qb->add('from', $entityFqcn.' e');
-
-//            foreach ($orderConds as $propertyName=>$direction) { // adding necessary fetching joins
-//                if (in_array($propertyName, $metadata->getAssociationNames())) {
-//                    $qb->leftJoin('e.'.$propertyName, $indexedAliases[$propertyName], 'WITH');
-//                }
-//            }
-        } else {
-            $qb->add('select', 'e');
-            $qb->add('from', $entityFqcn.' e');
         }
+
+        $qb->add('select', 'e');
+        $qb->add('from', $entityFqcn.' e');
 
         if (isset($params['start'])) {
             $start = $params['start'];
@@ -187,37 +162,38 @@ class ExtjsQueryBuilder
                     continue;
                 }
                 $name = $filter['property'];
-                $value = $this->parseValue($filter['value']);
-                if (false === $value) {
-                    continue;
-                }
-
-                $comparatorName = $value[0];
-                if (!in_array($comparatorName, $exprMethods)) {
-                    continue;
-                }
-
-                $value = $value[1];
-                if (in_array($comparatorName, array('in', 'notIn'))) {
-                    $value = explode(',', $value);
-                    if (count($value) == 1 && '' == $value[0]) { // there's no point of having IN('')
-                        continue;
-                    }
-                }
-
-                // if this is association field, then sometimes there could be just 'no-value'
-                // state which is conventionally marked as '-' value
-                if ($expressionManager->isAssociation($name) && '-' === $value) {
-                    continue;
-                }
 
                 $fieldName = $expressionManager->getDqlPropertyName($name);
 
-                if (in_array($comparatorName, array('isNull', 'isNotNull'))) {
+                if (in_array($filter['value'], array('isNull', 'isNotNull'))) { // these are sort of 'special case'
                     $andExpr->add(
-                        $qb->expr()->$comparatorName($fieldName)
+                        $qb->expr()->{$filter['value']}($fieldName)
                     );
                 } else {
+                    $value = $this->parseValue($filter['value']);
+                    if (false === $value) {
+                        continue;
+                    }
+
+                    $comparatorName = $value[0];
+                    if (!in_array($comparatorName, $exprMethods)) {
+                        continue;
+                    }
+
+                    $value = $value[1];
+                    if (in_array($comparatorName, array('in', 'notIn'))) {
+                        $value = explode(',', $value);
+                        if (count($value) == 1 && '' == $value[0]) { // there's no point of having IN('')
+                            continue;
+                        }
+                    }
+
+                    // if this is association field, then sometimes there could be just 'no-value'
+                    // state which is conventionally marked as '-' value
+                    if ($expressionManager->isAssociation($name) && '-' === $value) {
+                        continue;
+                    }
+
                     $andExpr->add(
                         $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
                     );
@@ -295,11 +271,6 @@ class ExtjsQueryBuilder
         if (!isset($parts['from'])) {
             throw new \RuntimeException('Provided $queryBuilder doesn\'t contain FROM part.');
         }
-//        if (null === $rootFetchEntityFqcn && count($parts['select']) > 1) {
-//            throw new \RuntimeException(
-//                'Provided $queryBuilder contains more than fetch entity in its SELECT statement but you haven\'t provided $rootFetchEntityFqcn'
-//            );
-//        }
 
         $rootAlias = $queryBuilder->getRootAlias();
         if (count($parts['select']) > 1) {
@@ -330,6 +301,8 @@ class ExtjsQueryBuilder
         }
 
         $countQueryBuilder->add('select', "COUNT ({$parts['select'][0]})");
+        $countQueryBuilder->resetDQLPart('orderBy');
+
         return $countQueryBuilder;
     }
 

@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\Tests\Service;
 
 use Doctrine\ORM\Mapping as Orm;
+use Sli\ExtJsIntegrationBundle\Service\QueryOrder;
 
 /**
  * @Orm\Entity
@@ -33,6 +34,35 @@ class DummyUser
      */
     public $address;
 
+    /**
+     * @Orm\ManyToOne(targetEntity="CreditCard")
+     */
+    public $creditCard;
+
+    static public function clazz()
+    {
+        return get_called_class();
+    }
+}
+
+/**
+ * @Orm\Entity
+ * @Orm\Table(name="sli_extjsintegration_cc")
+ */
+class CreditCard
+{
+    /**
+     * @Orm\Id
+     * @Orm\Column(type="integer")
+     * @Orm\GeneratedValue(strategy="AUTO")
+     */
+    public $id;
+
+    /**
+     * @Orm\Column(type="integer")
+     */
+    public $number;
+
     static public function clazz()
     {
         return get_called_class();
@@ -42,6 +72,8 @@ class DummyUser
 /**
  * @Orm\Entity
  * @Orm\Table(name="sli_extjsintegration_dummyaddress")
+ *
+ * @QueryOrder("zip")
  */
 class DummyAddress
 {

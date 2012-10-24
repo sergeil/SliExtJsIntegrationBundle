@@ -54,6 +54,18 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(3, $users[1]->id);
     }
 
+    public function testBuildQueryBuilderWithIsNotNullFilter()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'address', 'value' => 'isNull')
+            )
+        ));
+
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(1, count($users));
+    }
+
     public function testBuildQueryBuilderWithSortByDescWhereIdNotIn2()
     {
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
@@ -113,30 +125,49 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(3, count($users));
     }
 
-    public function testBuildCountQueryBuilder()
+    public function testBuildCountQueryBuilderFilterByAssociatedField()
     {
         $fetchQb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
-                array('property' => 'lastname', 'value' => 'eq:doe')
+                array('property' => 'address.zip', 'value' => 'like:10%')
             )
         ));
 
         $countQb = self::$builder->buildCountQueryBuilder($fetchQb);
-        $this->assertEquals(2, $countQb->getQuery()->getSingleScalarResult());
+
+        $this->assertEquals(1, $countQb->getQuery()->getSingleScalarResult());
     }
 
     public function testBuildCountQueryBuilderWithJoinFilterAndOrder()
     {
         $fetchQb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
-                array('property' => 'address.zip', 'value' => 'like:10%')
+                array('property' => 'address.zip', 'value' => 'isNull')
             ),
-            'sort' => array(
-                array('property' => 'address', 'direction' => 'ASC')
+            'sort' => array( // it simply will be removed
+                array('property' => 'address', 'direction' => 'DESC')
             )
         ));
 
         $countQb = self::$builder->buildCountQueryBuilder($fetchQb);
+
         $this->assertEquals(1, $countQb->getQuery()->getSingleScalarResult());
+    }
+
+    public function testBuildQueryOrderByAssociatedEntity()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'sort' => array(
+                array('property' => 'address', 'direction' => 'DESC')
+            )
+        ));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(3, count($users));
+
+        $this->assertEquals('jane', $users[0]->firstname);
+        $this->assertEquals('john', $users[1]->firstname);
+        $this->assertEquals('vassily', $users[2]->firstname);
     }
 }

@@ -58,10 +58,13 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $dummyUserMetadata = $metadataFactory->getMetadataFor(DummyUser::clazz());
         $dummyAddressMetadata = $metadataFactory->getMetadataFor(DummyAddress::clazz());
         $dummyCountryMetadata = $metadataFactory->getMetadataFor(DummyCountry::clazz());
+        $dummyCCMetadata = $metadataFactory->getMetadataFor(CreditCard::clazz());
 
         // updating database
         $st = new SchemaTool(self::$em);
-        $st->updateSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata), true);
+        $st->updateSchema(
+            array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata), true
+        );
 
         // populating
         foreach (array('john doe', 'jane doe', 'vassily pupkin') as $fullname) {
@@ -78,6 +81,12 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
                 $address->street = 'Blahblah';
                 $address->zip = '1010';
                 $e->address = $address;
+            } else if ('jane' == $exp[0]) {
+                $address = new DummyAddress();
+                $address->zip = '2020';
+                $address->street = 'foofoo';
+
+                $e->address = $address;
             }
 
             self::$em->persist($e);
@@ -90,8 +99,9 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $dummyUserMetadata = self::$em->getClassMetadata(DummyUser::clazz());
         $dummyAddressMetadata = self::$em->getClassMetadata(DummyAddress::clazz());
         $dummyCountryMetadata = self::$em->getClassMetadata(DummyCountry::clazz());
+        $dummyCCMetadata = self::$em->getClassMetadata(CreditCard::clazz());
 
         $st = new SchemaTool(self::$em);
-        $st->dropSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata));
+        $st->dropSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata));
     }
 }
