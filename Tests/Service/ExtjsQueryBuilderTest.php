@@ -15,44 +15,6 @@ require_once __DIR__.'/DummyEntities.php';
  */
 class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 {
-//    static public function setUpBeforeClass()
-//    {
-//        parent::setUpBeforeClass();
-//
-//        $metadataFactory = self::$em->getMetadataFactory();
-//
-//        $dummyUserMetadata = $metadataFactory->getMetadataFor(DummyUser::clazz());
-//        $dummyAddressMetadata = $metadataFactory->getMetadataFor(DummyAddress::clazz());
-//        $dummyCountryMetadata = $metadataFactory->getMetadataFor(DummyCountry::clazz());
-//
-//        // updating database
-//        $st = new SchemaTool(self::$em);
-//        $st->updateSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata), true);
-//
-//        // populating
-//        foreach (array('john doe', 'jane doe', 'vassily pupkin') as $fullname) {
-//            $exp = explode(' ', $fullname);
-//            $e = new DummyUser();
-//            $e->firstname = $exp[0];
-//            $e->lastname = $exp[1];
-//
-//            if ('john' == $exp[0]) {
-//                $address = new DummyAddress();
-//                $address->country = new DummyCountry();
-//                $address->country->name = 'Fairy land';
-//
-//                $address->street = 'Blahblah';
-//                $address->zip = '1111111';
-//                $e->address = $address;
-//            }
-//
-//            self::$em->persist($e);
-//        }
-//        self::$em->flush();
-//
-//        self::$builder = self::$kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
-//    }
-
     public function testBuildQueryBuilderEmptyFilter()
     {
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
@@ -161,5 +123,20 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
         $countQb = self::$builder->buildCountQueryBuilder($fetchQb);
         $this->assertEquals(2, $countQb->getQuery()->getSingleScalarResult());
+    }
+
+    public function testBuildCountQueryBuilderWithJoinFilterAndOrder()
+    {
+        $fetchQb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'address.zip', 'value' => 'like:10%')
+            ),
+            'sort' => array(
+                array('property' => 'address', 'direction' => 'ASC')
+            )
+        ));
+
+        $countQb = self::$builder->buildCountQueryBuilder($fetchQb);
+        $this->assertEquals(1, $countQb->getQuery()->getSingleScalarResult());
     }
 }

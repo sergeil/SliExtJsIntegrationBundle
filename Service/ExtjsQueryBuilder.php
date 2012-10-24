@@ -119,9 +119,6 @@ class ExtjsQueryBuilder
                 }
 
                 list($propertyName, $direction) = array_values($entry);
-//                if (!in_array($propertyName, $availableFields)) {
-//                    continue;
-//                }
                 if (!$expressionManager->isValidExpression($propertyName)) {
                     continue;
                 }
@@ -153,14 +150,17 @@ class ExtjsQueryBuilder
                 }
             }
 
-            $qb->add('select', implode(', ', $selectParams));
+            foreach ($selectParams as $alias) {
+                $qb->addSelect($alias);
+            }
+
             $qb->add('from', $entityFqcn.' e');
 
-            foreach ($orderConds as $propertyName=>$direction) { // adding necessary fetching joins
-                if (in_array($propertyName, $metadata->getAssociationNames())) {
-                    $qb->leftJoin('e.'.$propertyName, $indexedAliases[$propertyName], 'WITH');
-                }
-            }
+//            foreach ($orderConds as $propertyName=>$direction) { // adding necessary fetching joins
+//                if (in_array($propertyName, $metadata->getAssociationNames())) {
+//                    $qb->leftJoin('e.'.$propertyName, $indexedAliases[$propertyName], 'WITH');
+//                }
+//            }
         } else {
             $qb->add('select', 'e');
             $qb->add('from', $entityFqcn.' e');
@@ -207,23 +207,9 @@ class ExtjsQueryBuilder
 
                 // if this is association field, then sometimes there could be just 'no-value'
                 // state which is conventionally marked as '-' value
-//                if ($metadata->hasAssociation($name) && '-' === $value) {
-//                    continue;
-//                }
                 if ($expressionManager->isAssociation($name) && '-' === $value) {
                     continue;
                 }
-
-                $sanitizedFieldName = $this->sanitizeDqlFieldName($name);
-//                if (!$sanitizedFieldName) {
-//                    continue;
-//                } else if (!in_array($sanitizedFieldName, $availableFields)) {
-//                    throw new \RuntimeException(
-//                        "There's no field with name '$sanitizedFieldName' found in model '$entityFqcn'."
-//                    );
-//                }
-//
-//                $fieldName = 'e.'.$sanitizedFieldName;
 
                 $fieldName = $expressionManager->getDqlPropertyName($name);
 
@@ -235,7 +221,6 @@ class ExtjsQueryBuilder
                     $andExpr->add(
                         $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
                     );
-//                    $valuesToBind[] = $this->convertValue($metadata, $sanitizedFieldName, $value);
                     $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
                 }
             }
@@ -310,13 +295,13 @@ class ExtjsQueryBuilder
         if (!isset($parts['from'])) {
             throw new \RuntimeException('Provided $queryBuilder doesn\'t contain FROM part.');
         }
-        if (null === $rootFetchEntityFqcn && count($parts['select']) > 1) {
-            throw new \RuntimeException(
-                'Provided $queryBuilder contains more than fetch entity in its SELECT statement but you haven\'t provided $rootFetchEntityFqcn'
-            );
-        }
+//        if (null === $rootFetchEntityFqcn && count($parts['select']) > 1) {
+//            throw new \RuntimeException(
+//                'Provided $queryBuilder contains more than fetch entity in its SELECT statement but you haven\'t provided $rootFetchEntityFqcn'
+//            );
+//        }
 
-        $rootAlias = null;
+        $rootAlias = $queryBuilder->getRootAlias();
         if (count($parts['select']) > 1) {
             foreach ($parts['from'] as $fromPart) {
                 list($entityFqcn, $alias) = explode(' ', $fromPart);

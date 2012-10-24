@@ -32,6 +32,7 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $em = clone $em;
 
         self::$em = $em;
+        self::$builder = self::$kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
 
         // injecting a new metadata driver for our test entity
         $annotationDriver = new AnnotationDriver(
@@ -82,8 +83,6 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
             self::$em->persist($e);
         }
         self::$em->flush();
-
-        self::$builder = self::$kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
     }
 
     static public function tearDownAfterClass()
