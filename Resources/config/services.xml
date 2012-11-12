@@ -36,5 +36,16 @@
             <argument type="service" id="sli.extjsintegration.entity_data_mapper" />
             <argument type="service" id="sli.extjsintegration.sorting_field_resolver" />
         </service>
+
+        <service id="sli.extjsintegration.renderers_manager"
+                 class="Sli\ExtJsIntegrationBundle\Rendering\RenderersManager">
+            <argument type="service" id="sli.extjsintegration.bundle_renderers_provider" />
+            <argument type="service" id="service_container" />
+        </service>
+        <service id="sli.extjsintegration.bundle_renderers_provider"
+                 class="Sli\ExtJsIntegrationBundle\Rendering\BundleRenderersProvider"
+                 public="false">
+            <argument type="service" id="kernel" />
+        </service>
     </services>
 </container>

@@ -124,7 +124,7 @@ class EntityDataMapperService
                         $this->fm->set($entity, $fieldName, $methodParams);
                     } catch (\Exception $e) {
                         throw new \RuntimeException(
-                            "Something went wrong during mapping of a scalar field '$fieldName'.", null, $e
+                            "Something went wrong during mapping of a scalar field '$fieldName' - ".$e->getMessage(), null, $e
                         );
                     }
                 }
