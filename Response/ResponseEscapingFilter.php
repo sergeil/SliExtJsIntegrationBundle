@@ -43,7 +43,7 @@ class ResponseEscapingFilter
      */
     protected function escapeString($string)
     {
-        return htmlentities($string);
+        return htmlspecialchars($string);
     }
 
     private function escapeRecursively(array $input)
