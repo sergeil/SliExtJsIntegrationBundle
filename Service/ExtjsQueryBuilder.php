@@ -250,6 +250,10 @@ class ExtjsQueryBuilder
     }
 
     /**
+     * If you use Doctrine version 2.2 or higher, consider using {@class Doctrine\ORM\Tools\Pagination\Paginator}
+     * instead. See http://docs.doctrine-project.org/en/latest/tutorials/pagination.html for more details
+     * on that.
+     *
      * @throws \RuntimeException
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder  Fetch query-builder, in other words - instance of QueryBuilder
      *                                                  that will be used to actually execute SELECT query for response
@@ -300,8 +304,9 @@ class ExtjsQueryBuilder
             throw new \RuntimeException("Unable to resolve alias for entity $rootFetchEntityFqcn");
         }
 
-        $countQueryBuilder->add('select', "COUNT ({$parts['select'][0]})");
-        $countQueryBuilder->resetDQLPart('orderBy');
+        // DISTINCT is needed when there are LEFT JOINs in your queries
+        $countQueryBuilder->add('select', "COUNT (DISTINCT {$parts['select'][0]})");
+        $countQueryBuilder->resetDQLPart('orderBy'); // for COUNT queries it is completely pointless
 
         return $countQueryBuilder;
     }
