@@ -180,7 +180,7 @@ class ExpressionManager
     /**
      * @throws \RuntimeException
      * @param string $expression
-     * @return array  Doctrine's mapping
+     * @return array  Doctrine field's mapping
      */
     public function getMapping($expression)
     {
