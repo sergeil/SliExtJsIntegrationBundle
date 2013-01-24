@@ -4,7 +4,7 @@ namespace Sli\ExtJsIntegrationBundle\Service;
 
 use Doctrine\ORM\EntityManager;
 use Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -194,10 +194,43 @@ class ExtjsQueryBuilder
                         continue;
                     }
 
-                    $andExpr->add(
-                        $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
-                    );
-                    $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                    // when "IN" is used in conjunction with TO_MANY type of relation,
+                    // then we will treat it in a special way and generate "MEMBER OF" queries
+                    // instead
+                    $isAdded = false;
+                    if ($expressionManager->isAssociation($name)) {
+                        $mapping = $expressionManager->getMapping($name);
+                        if (   in_array($comparatorName, array('in', 'notIn'))
+                            && in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
+
+                            $statements = array();
+                            foreach ($value as $id) {
+                                $statements[] = sprintf(
+                                    ('notIn' == $comparatorName ? 'NOT ' : '').'?%d MEMBER OF %s',
+                                    count($valuesToBind),
+                                    $expressionManager->getDqlPropertyName($name)
+                                );
+                                $valuesToBind[] = $this->convertValue($expressionManager, $name, $id);
+                            }
+
+                            if ('in' == $comparatorName) {
+                                $andExpr->add(
+                                    call_user_func_array(array($qb->expr(), 'orX'), $statements)
+                                );
+                            } else {
+                                $andExpr->addMultiple($statements);
+                            }
+
+                            $isAdded = true;
+                        }
+                    }
+
+                    if (!$isAdded) {
+                        $andExpr->add(
+                            $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
+                        );
+                        $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                    }
                 }
             }
 
@@ -228,7 +261,7 @@ class ExtjsQueryBuilder
      *                            from database entities. Entity that needs to be hydrated will be passed as a first and
      *                            only argument to the function.
      * @param string|null $rootFetchEntityFqcn  If your fetch query contains several SELECT entries, then you need
-          *                                          to specify which entity we must use to build COUNT query with
+     *                                          to specify which entity we must use to build COUNT query with
      * @return array   Response that should be sent back to the client side. You need to have a properly
      *                 configured proxy's reader for your store, it should be of json type with the following config:
      *                 { type: 'json', root: 'items', totalProperty: 'total' }
@@ -250,6 +283,10 @@ class ExtjsQueryBuilder
     }
 
     /**
+     * If you use Doctrine version 2.2 or higher, consider using {@class Doctrine\ORM\Tools\Pagination\Paginator}
+     * instead. See http://docs.doctrine-project.org/en/latest/tutorials/pagination.html for more details
+     * on that.
+     *
      * @throws \RuntimeException
      * @param \Doctrine\ORM\QueryBuilder $queryBuilder  Fetch query-builder, in other words - instance of QueryBuilder
      *                                                  that will be used to actually execute SELECT query for response
@@ -300,8 +337,9 @@ class ExtjsQueryBuilder
             throw new \RuntimeException("Unable to resolve alias for entity $rootFetchEntityFqcn");
         }
 
-        $countQueryBuilder->add('select', "COUNT ({$parts['select'][0]})");
-        $countQueryBuilder->resetDQLPart('orderBy');
+        // DISTINCT is needed when there are LEFT JOINs in your queries
+        $countQueryBuilder->add('select', "COUNT (DISTINCT {$parts['select'][0]})");
+        $countQueryBuilder->resetDQLPart('orderBy'); // for COUNT queries it is completely pointless
 
         return $countQueryBuilder;
     }
