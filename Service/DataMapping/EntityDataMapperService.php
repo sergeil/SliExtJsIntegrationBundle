@@ -8,10 +8,19 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Sli\AuxBundle\Util\Toolkit;
 use Sli\AuxBundle\Util\JavaBeansObjectFieldsManager;
+use Doctrine\Common\Collections\Collection;
 
 /**
+ * Service is responsible for inspect the data that usually comes from client-side and update the database. All
+ * relation types supported by Doctrine are supported by this service as well - ONE_TO_ONE, ONE_TO_MANY,
+ * MANY_TO_ONE, MANY_TO_MANY. Service is capable to properly update all relation types ( owning, inversed-side )
+ * even when entity classes do not define them. Also this service is smart enough to properly cast provided
+ * values to the types are defined in doctrine mappings, that is - if string "10.2" is provided, but the field
+ * it was provided for is mapped as "float", then the conversion to float value will be automatically done - this is
+ * especially useful if your setter method have some logic not just assigning a new value to a class field.
+ *
  * In order for this class to work, your security principal ( implementation of UserInterface ),
- * must implement {@class PreferencesAwareUserInterface}
+ * must implement {@class PreferencesAwareUserInterface}.
  *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
@@ -64,10 +73,11 @@ class EntityDataMapperService
             }
             $format = $p[$keyName];
 
+            $rawClientValue = $clientValue;
             $clientValue = \DateTime::createFromFormat($format, $clientValue);
             if (!$clientValue) {
                 throw new \RuntimeException(
-                    "Unable to map a date, unable to transform date-value of '$clientValue' to '$format' format."
+                    "Unable to map a date, unable to transform date-value of '$rawClientValue' to '$format' format."
                 );
             }
             return $clientValue;
@@ -188,10 +198,17 @@ class EntityDataMapperService
                         foreach ($entitiesToDelete as $refEntity) {
                             if ($col->contains($refEntity)) {
                                 $col->removeElement($refEntity);
-                                // nulling the other side of relation
-                                $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
-                                $this->fm->set($refEntity, $mapping['mappedBy'], array(null));
-//                                $refMetadata->setFieldValue($refEntity, $mapping['mappedBy'], null);
+
+                                if (CMI::MANY_TO_MANY == $mapping['type']) {
+                                    $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
+                                    $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
+                                    if ($inversedCol instanceof Collection) {
+                                        $inversedCol->removeElement($entity);
+                                    }
+                                } else {
+                                    // nulling the other side of relation
+                                    $this->fm->set($refEntity, $mapping['mappedBy'], array(null));
+                                }
                             }
                         }
                     }
@@ -209,10 +226,16 @@ class EntityDataMapperService
                         foreach ($entitiesToAdd as $refEntity) {
                             if (!$col->contains($refEntity)) {
                                 $col->add($refEntity);
-                                // updating many_to_one side of relation
-                                $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
-                                $this->fm->set($refEntity, $mapping['mappedBy'], array($entity));
-//                                $refMetadata->setFieldValue($refEntity, $mapping['mappedBy'], $entity);
+
+                                if (CMI::MANY_TO_MANY == $mapping['type']) {
+                                    $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
+                                    $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
+                                    if ($inversedCol instanceof Collection) {
+                                        $inversedCol->add($entity);
+                                    }
+                                } else {
+                                    $this->fm->set($refEntity, $mapping['mappedBy'], array($entity));
+                                }
                             }
                         }
                     }
