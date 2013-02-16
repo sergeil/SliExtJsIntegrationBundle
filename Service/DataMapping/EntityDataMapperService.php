@@ -201,9 +201,13 @@ class EntityDataMapperService
 
                                 if (CMI::MANY_TO_MANY == $mapping['type']) {
                                     $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
-                                    $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
-                                    if ($inversedCol instanceof Collection) {
-                                        $inversedCol->removeElement($entity);
+
+                                    // bidirectional
+                                    if ($refMetadata->hasField($mapping['mappedBy'])) {
+                                        $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
+                                        if ($inversedCol instanceof Collection) {
+                                            $inversedCol->removeElement($entity);
+                                        }
                                     }
                                 } else {
                                     // nulling the other side of relation
@@ -229,9 +233,13 @@ class EntityDataMapperService
 
                                 if (CMI::MANY_TO_MANY == $mapping['type']) {
                                     $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
-                                    $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
-                                    if ($inversedCol instanceof Collection) {
-                                        $inversedCol->add($entity);
+
+                                    // bidirectional
+                                    if ($refMetadata->hasField($mapping['mappedBy'])) {
+                                        $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
+                                        if ($inversedCol instanceof Collection) {
+                                            $inversedCol->add($entity);
+                                        }
                                     }
                                 } else {
                                     $this->fm->set($refEntity, $mapping['mappedBy'], array($entity));
