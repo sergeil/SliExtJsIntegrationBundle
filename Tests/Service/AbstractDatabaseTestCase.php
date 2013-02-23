@@ -55,41 +55,49 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
 
         $metadataFactory = self::$em->getMetadataFactory();
 
-        $dummyUserMetadata = $metadataFactory->getMetadataFor(DummyUser::clazz());
-        $dummyAddressMetadata = $metadataFactory->getMetadataFor(DummyAddress::clazz());
-        $dummyCountryMetadata = $metadataFactory->getMetadataFor(DummyCountry::clazz());
-        $dummyCCMetadata = $metadataFactory->getMetadataFor(CreditCard::clazz());
-
         // updating database
         $st = new SchemaTool(self::$em);
-        $st->updateSchema(
-            array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata), true
+
+        $classNames = array(
+            DummyUser::clazz(), DummyAddress::clazz(), DummyCountry::clazz(), CreditCard::clazz(), Group::clazz()
         );
+        $meta = array();
+        foreach ($classNames as $className) {
+            $meta[] = $metadataFactory->getMetadataFor($className);
+        }
+
+        $st->updateSchema($meta, true);
+
+        $adminsGroup = new Group();
+        $adminsGroup->name = 'admins';
+        $em->persist($adminsGroup);
 
         // populating
         foreach (array('john doe', 'jane doe', 'vassily pupkin') as $fullname) {
             $exp = explode(' ', $fullname);
-            $e = new DummyUser();
-            $e->firstname = $exp[0];
-            $e->lastname = $exp[1];
+            $user = new DummyUser();
+            $user->firstname = $exp[0];
+            $user->lastname = $exp[1];
 
             if ('john' == $exp[0]) {
+                $adminsGroup->addUser($user);
+
                 $address = new DummyAddress();
                 $address->country = new DummyCountry();
                 $address->country->name = 'Fairy land';
 
                 $address->street = 'Blahblah';
                 $address->zip = '1010';
-                $e->address = $address;
+                $user->address = $address;
             } else if ('jane' == $exp[0]) {
                 $address = new DummyAddress();
                 $address->zip = '2020';
                 $address->street = 'foofoo';
 
-                $e->address = $address;
+                $user->address = $address;
             }
 
-            self::$em->persist($e);
+            self::$em->persist($user);
         }
         self::$em->flush();
     }
@@ -100,8 +108,11 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $dummyAddressMetadata = self::$em->getClassMetadata(DummyAddress::clazz());
         $dummyCountryMetadata = self::$em->getClassMetadata(DummyCountry::clazz());
         $dummyCCMetadata = self::$em->getClassMetadata(CreditCard::clazz());
+        $groupMetadata = self::$em->getClassMetadata(Group::clazz());
 
         $st = new SchemaTool(self::$em);
-        $st->dropSchema(array($dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata));
+        $st->dropSchema(array(
+            $dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata
+        ));
     }
 }

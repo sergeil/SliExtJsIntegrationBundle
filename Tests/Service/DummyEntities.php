@@ -4,6 +4,7 @@ namespace Sli\ExtJsIntegrationBundle\Tests\Service;
 
 use Doctrine\ORM\Mapping as Orm;
 use Sli\ExtJsIntegrationBundle\Service\QueryOrder;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @Orm\Entity
@@ -39,9 +40,61 @@ class DummyUser
      */
     public $creditCard;
 
+    /**
+     * @Orm\ManyToMany(targetEntity="Group", inversedBy="users")
+     */
+    public $groups;
+
+    public function __construct()
+    {
+        $this->groups = new ArrayCollection();
+    }
+
     static public function clazz()
     {
         return get_called_class();
+    }
+}
+
+/**
+ * @Orm\Entity
+ * @Orm\Table(name="sli_extjsintegration_group")
+ */
+class Group
+{
+    /**
+     * @Orm\Id
+     * @Orm\Column(type="integer")
+     * @Orm\GeneratedValue(strategy="AUTO")
+     */
+    public $id;
+
+    /**
+     * @Orm\Column(type="string")
+     */
+    public $name;
+
+    /**
+     * @Orm\ManyToMany(targetEntity="DummyUser", mappedBy="groups")
+     */
+    public $users;
+
+    static public function clazz()
+    {
+        return get_called_class();
+    }
+
+    public function addUser(DummyUser $user)
+    {
+        $user->groups->add($this);
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+        }
+    }
+
+    public function __construct()
+    {
+        $this->users = new ArrayCollection();
     }
 }
 

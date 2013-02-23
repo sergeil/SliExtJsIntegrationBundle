@@ -170,4 +170,21 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals('john', $users[1]->firstname);
         $this->assertEquals('vassily', $users[2]->firstname);
     }
+
+    public function testBuildQueryWithMemberOfManyToMany()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                // when IN is used in conjunction with TO_MANY ( MANY_TO_MANY, ONE_TO_MANY ) relations
+                // then it will treated in special way and MEMBER OF query will be generated
+                array('property' => 'groups', 'value' => 'in:1,20')
+            )
+        ));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(1, count($users));
+        $this->assertEquals('john', $users[0]->firstname);
+        $this->assertEquals('doe', $users[0]->lastname);
+    }
 }

@@ -4,7 +4,7 @@ namespace Sli\ExtJsIntegrationBundle\Service;
 
 use Doctrine\ORM\EntityManager;
 use Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -194,10 +194,35 @@ class ExtjsQueryBuilder
                         continue;
                     }
 
-                    $andExpr->add(
-                        $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
-                    );
-                    $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                    // when "IN" is used in conjunction with TO_MANY type of relation,
+                    // then we will treat it in a special way and generate "MEMBER OF" queries
+                    // instead
+                    $isAdded = false;
+                    if ($expressionManager->isAssociation($name)) {
+                        $mapping = $expressionManager->getMapping($name);
+                        if (in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
+                            $statements = array();
+                            foreach ($value as $id) {
+                                $statements[] = sprintf(
+                                    '?%d MEMBER OF %s', count($valuesToBind), $expressionManager->getDqlPropertyName($name)
+                                );
+                                $valuesToBind[] = $this->convertValue($expressionManager, $name, $id);
+                            }
+
+                            $andExpr->add(
+                                call_user_func_array(array($qb->expr(), 'orX'), $statements)
+                            );
+
+                            $isAdded = true;
+                        }
+                    }
+
+                    if (!$isAdded) {
+                        $andExpr->add(
+                            $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
+                        );
+                        $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                    }
                 }
             }
 
@@ -228,7 +253,7 @@ class ExtjsQueryBuilder
      *                            from database entities. Entity that needs to be hydrated will be passed as a first and
      *                            only argument to the function.
      * @param string|null $rootFetchEntityFqcn  If your fetch query contains several SELECT entries, then you need
-          *                                          to specify which entity we must use to build COUNT query with
+     *                                          to specify which entity we must use to build COUNT query with
      * @return array   Response that should be sent back to the client side. You need to have a properly
      *                 configured proxy's reader for your store, it should be of json type with the following config:
      *                 { type: 'json', root: 'items', totalProperty: 'total' }

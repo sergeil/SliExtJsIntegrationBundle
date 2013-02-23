@@ -106,6 +106,15 @@ class EntityDataMapperService
         return 'on' === $clientValue || 1 == $clientValue || 'true' === $clientValue;
     }
 
+    /**
+     * Be aware, that "id" property will never be mapped to you entities even if it is provided
+     * in $params, we presume that it always be generated automatically.
+     *
+     * @param Object $entity
+     * @param array $params  Data usually received from client-sidef
+     * @param array $allowedFields  Fields names you want to allow have mapped
+     * @throws \RuntimeException
+     */
     public function mapEntity($entity, array $params, array $allowedFields)
     {
         $entityMethods = get_class_methods($entity);
