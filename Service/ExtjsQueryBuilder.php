@@ -200,18 +200,26 @@ class ExtjsQueryBuilder
                     $isAdded = false;
                     if ($expressionManager->isAssociation($name)) {
                         $mapping = $expressionManager->getMapping($name);
-                        if (in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
+                        if (   in_array($comparatorName, array('in', 'notIn'))
+                            && in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
+
                             $statements = array();
                             foreach ($value as $id) {
                                 $statements[] = sprintf(
-                                    '?%d MEMBER OF %s', count($valuesToBind), $expressionManager->getDqlPropertyName($name)
+                                    ('notIn' == $comparatorName ? 'NOT ' : '').'?%d MEMBER OF %s',
+                                    count($valuesToBind),
+                                    $expressionManager->getDqlPropertyName($name)
                                 );
                                 $valuesToBind[] = $this->convertValue($expressionManager, $name, $id);
                             }
 
-                            $andExpr->add(
-                                call_user_func_array(array($qb->expr(), 'orX'), $statements)
-                            );
+                            if ('in' == $comparatorName) {
+                                $andExpr->add(
+                                    call_user_func_array(array($qb->expr(), 'orX'), $statements)
+                                );
+                            } else {
+                                $andExpr->addMultiple($statements);
+                            }
 
                             $isAdded = true;
                         }

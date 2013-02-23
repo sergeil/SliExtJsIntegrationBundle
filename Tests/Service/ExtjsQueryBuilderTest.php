@@ -187,4 +187,17 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals('john', $users[0]->firstname);
         $this->assertEquals('doe', $users[0]->lastname);
     }
+
+    public function testBuildQueryWithNotMemberOfAndManyToMany()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'groups', 'value' => 'notIn:1')
+            )
+        ));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(2, count($users));
+    }
 }
