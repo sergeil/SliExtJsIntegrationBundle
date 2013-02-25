@@ -212,7 +212,7 @@ class EntityDataMapperService
                                     $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
 
                                     // bidirectional
-                                    if ($refMetadata->hasField($mapping['mappedBy'])) {
+                                    if ($refMetadata->hasAssociation($mapping['mappedBy'])) {
                                         $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
                                         if ($inversedCol instanceof Collection) {
                                             $inversedCol->removeElement($entity);
@@ -244,7 +244,7 @@ class EntityDataMapperService
                                     $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
 
                                     // bidirectional
-                                    if ($refMetadata->hasField($mapping['mappedBy'])) {
+                                    if ($refMetadata->hasAssociation($mapping['mappedBy'])) {
                                         $inversedCol = $refMetadata->getFieldValue($refEntity, $mapping['mappedBy']);
                                         if ($inversedCol instanceof Collection) {
                                             $inversedCol->add($entity);
