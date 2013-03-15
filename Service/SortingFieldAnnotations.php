@@ -8,6 +8,8 @@ namespace Sli\ExtJsIntegrationBundle\Service;
  * entity must be used to order by it. For example, if we have entities Foo and Bar which related as one-to-many
  * relation using field Foo.bar, then if we do ORDER BY Foo.bar we need to know which field we want to use
  * to order by related 'bar' entity.
+ *
+ * @Annotation
  */
 final class QueryOrder extends \Doctrine\Common\Annotations\Annotation
 {
