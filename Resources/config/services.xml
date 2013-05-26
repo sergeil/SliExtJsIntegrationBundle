@@ -39,7 +39,7 @@
 
         <service id="sli.extjsintegration.renderers_manager"
                  class="Sli\ExtJsIntegrationBundle\Rendering\RenderersManager">
-            <argument type="service" id="sli.extjsintegration.bundle_renderers_provider" />
+            <argument type="service" id="sli.extjsintegration.renderers_provider" />
             <argument type="service" id="service_container" />
         </service>
         <service id="sli.extjsintegration.bundle_renderers_provider"

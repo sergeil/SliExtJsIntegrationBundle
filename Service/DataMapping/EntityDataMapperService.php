@@ -111,7 +111,7 @@ class EntityDataMapperService
      * in $params, we presume that it always be generated automatically.
      *
      * @param Object $entity
-     * @param array $params  Data usually received from client-sidef
+     * @param array $params  Data usually received from client-side
      * @param array $allowedFields  Fields names you want to allow have mapped
      * @throws \RuntimeException
      */
@@ -149,7 +149,7 @@ class EntityDataMapperService
                 }
             }
         }
-
+        
         foreach ($metadata->getAssociationMappings() as $mapping) {
             $fieldName = $mapping['fieldName'];
 

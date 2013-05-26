@@ -2,6 +2,7 @@
 
 namespace Sli\ExtJsIntegrationBundle\Rendering;
 
+use Sli\ExpanderBundle\Ext\ContributorInterface;
 use Sli\ExtJsIntegrationBundle\Rendering\RenderersAwareBundle;
 use Symfony\Component\HttpKernel\Kernel;
 
@@ -11,10 +12,10 @@ use Symfony\Component\HttpKernel\Kernel;
  *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class BundleRenderersProvider implements RenderersProviderInterface
+class BundleRenderersProvider implements RenderersProviderInterface, ContributorInterface
 {
     private $kernel;
-    private $indexedRenderers;
+    private $indexedRenderers = array();
 
     public function __construct(Kernel $kernel)
     {
@@ -46,5 +47,15 @@ class BundleRenderersProvider implements RenderersProviderInterface
     public function has($id)
     {
         return isset($this->indexedRenderers[$id]);
+    }
+
+    public function getItems()
+    {
+        return $this->indexedRenderers;
+    }
+
+    static public function clazz()
+    {
+        return get_called_class();
     }
 }

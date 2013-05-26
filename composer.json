@@ -15,6 +15,7 @@
     ],
     "require": {
         "php": ">=5.3.0",
+        "sergeil/aux-bundle": "dev-master",
         "symfony/framework-bundle": ">=2.1.0,<2.3-dev"
     },
     "autoload": {
