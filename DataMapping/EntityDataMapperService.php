@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\DataMapping;
 
 use Doctrine\ORM\EntityManager;
+use Sli\ExpanderBundle\Ext\ContributorInterface;
 use Symfony\Component\Security\Core\SecurityContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
@@ -30,15 +31,18 @@ class EntityDataMapperService
     private $sc;
     private $fm;
     private $paramsProvider;
+    private $complexFiledValueConvertersProvider;
 
     public function __construct(
         EntityManager $em, SecurityContext $sc, JavaBeansObjectFieldsManager $fm,
-        MethodInvocationParametersProviderInterface $paramsProvider)
+        MethodInvocationParametersProviderInterface $paramsProvider,
+        ContributorInterface $complexFieldValueConvertersProvider)
     {
         $this->em = $em;
         $this->sc = $sc;
         $this->fm = $fm;
         $this->paramsProvider = $paramsProvider;
+        $this->complexFiledValueConvertersProvider = $complexFieldValueConvertersProvider;
     }
 
     /**
@@ -95,7 +99,6 @@ class EntityDataMapperService
                 return $this->convertDate($clientValue);
             case 'datetime':
                 return $this->convertDate($clientValue);
-//                throw new \RuntimeException('No support for mapping "datetime" field yet!');
         }
 
         return $clientValue;
@@ -138,8 +141,20 @@ class EntityDataMapperService
                       && '' === $value)) {
                     try {
                         $methodParams = $this->paramsProvider->getParameters(get_class($entity), $this->fm->formatSetterName($fieldName));
-                        $methodParams = array_merge(array($this->convertValue($value, $mapping['type'])), $methodParams);
 
+                        $convertedValue = null;
+                        if (is_object($value) || is_array($value)) {
+                            foreach ($this->complexFiledValueConvertersProvider->getItems() as $converter) {
+                                /* @var ComplexFieldValueConverterInterface $converter */
+                                if ($converter->isResponsible($value, $fieldName, $metadata)) {
+                                    $convertedValue = $converter->convert($value, $fieldName, $metadata);
+                                }
+                            }
+                        } else {
+                            $convertedValue = $this->convertValue($value, $mapping['type']);
+                        }
+
+                        $methodParams = array_merge(array($convertedValue), $methodParams);
                         $this->fm->set($entity, $fieldName, $methodParams);
                     } catch (\Exception $e) {
                         throw new \RuntimeException(

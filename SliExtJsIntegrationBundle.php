@@ -32,6 +32,9 @@ class SliExtJsIntegrationBundle extends Bundle
                 'sli.extjsintegration.renderers_provider'
             )
         );
-    }
 
+        $container->addCompilerPass(
+            new CompositeContributorsProviderCompilerPass('sli.extjsintegration.complex_field_value_converters_provider')
+        );
+    }
 }
