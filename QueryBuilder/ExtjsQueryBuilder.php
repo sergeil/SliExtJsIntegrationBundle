@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
@@ -96,13 +97,22 @@ class ExtjsQueryBuilder
     }
 
     /**
+     * @throws \RuntimeException
+     *
      * @param string $entityFqcn  Root fetch entity fully-qualified-class-name
      * @param array $params  Parameters that were sent from client-side
+     * @param SortingFieldResolverInterface $primarySortingFieldResolver
+     *
      * @return \Doctrine\ORM\QueryBuilder
-     * @throws \RuntimeException
      */
-    public function buildQueryBuilder($entityFqcn, array $params, SortingFieldResolverInterface $sortingFieldResolver = null)
+    public function buildQueryBuilder($entityFqcn, array $params, SortingFieldResolverInterface $primarySortingFieldResolver = null)
     {
+        $sortingFieldResolver = new ChainSortingFieldResolver();
+        if ($primarySortingFieldResolver) {
+            $sortingFieldResolver->add($primarySortingFieldResolver);
+        }
+        $sortingFieldResolver->add($this->sortingFieldResolver);
+
         $metadata = $this->em->getClassMetadata($entityFqcn);
 
         $expressionManager = new ExpressionManager($entityFqcn, $this->em);
@@ -130,7 +140,7 @@ class ExtjsQueryBuilder
                 }
 
                 if (in_array($propertyName, $metadata->getAssociationNames())) {
-                    $associatedScalarProperty = $this->sortingFieldResolver->resolve($entityFqcn, $propertyName);
+                    $associatedScalarProperty = $sortingFieldResolver->resolve($entityFqcn, $propertyName);
                     $alias = $expressionManager->allocateAlias($propertyName);
                     $orderStms[] = $alias.'.'.$associatedScalarProperty.' '.$direction;
                 } else {

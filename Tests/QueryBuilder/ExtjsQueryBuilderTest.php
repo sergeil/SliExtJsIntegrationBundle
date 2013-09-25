@@ -175,19 +175,31 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuildQueryOrderByAssociatedEntityWithProvidedSortingFieldResolver()
     {
+        $sortingResolver = $this->getMock(
+            '\Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface'
+        );
+        $sortingResolver->expects($this->atLeastOnce())
+            ->method('resolve')
+            ->with($this->equalTo(DummyUser::clazz()), $this->equalTo('address'))
+            ->will($this->returnValue('street'));
+
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'sort' => array(
-                array('property' => 'address', 'direction' => 'DESC')
+                array('property' => 'address', 'direction' => 'ASC')
             )
-        ));
+        ), $sortingResolver);
+
+        $orderBy = $qb->getDQLPart('orderBy');
+        $this->assertEquals(1, count($orderBy));
+        $this->assertTrue(strpos($orderBy[0], 'street ASC') !== false);
 
         /* @var DummyUser[] $users */
         $users = $qb->getQuery()->getResult();
         $this->assertEquals(3, count($users));
 
-        $this->assertEquals('jane', $users[0]->firstname);
-        $this->assertEquals('john', $users[1]->firstname);
-        $this->assertEquals('vassily', $users[2]->firstname);
+        $this->assertEquals('vassily', $users[0]->firstname);
+        $this->assertEquals('jane', $users[1]->firstname);
+        $this->assertEquals('john', $users[2]->firstname);
     }
 
     public function testBuildQueryWithMemberOfManyToMany()

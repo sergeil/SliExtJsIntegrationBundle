@@ -91,13 +91,13 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
                 $address->country = new DummyCountry();
                 $address->country->name = 'Fairy land';
 
-                $address->street = 'Blahblah';
+                $address->street = 'foofoo';
                 $address->zip = '1010';
                 $user->address = $address;
             } else if ('jane' == $exp[0]) {
                 $address = new DummyAddress();
                 $address->zip = '2020';
-                $address->street = 'foofoo';
+                $address->street = 'Blahblah';
 
                 $user->address = $address;
             }
