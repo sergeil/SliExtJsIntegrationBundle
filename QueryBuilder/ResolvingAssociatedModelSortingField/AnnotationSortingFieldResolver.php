@@ -1,12 +1,14 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Service;
+namespace Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Sli\AuxBundle\Util\Toolkit as Tk;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
+use Sli\ExtJsIntegrationBundle\Service\QueryOrder;
 
-require_once __DIR__.'/SortingFieldAnnotations.php';
+require_once __DIR__ . '/../../Service/SortingFieldAnnotations.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>

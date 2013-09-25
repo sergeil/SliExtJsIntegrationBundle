@@ -1,6 +1,6 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Service;
+namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;

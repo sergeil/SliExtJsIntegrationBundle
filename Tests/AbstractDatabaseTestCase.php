@@ -1,12 +1,17 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Tests\Service;
+namespace Sli\ExtJsIntegrationBundle\Tests;
 
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder;
+use Sli\ExtJsIntegrationBundle\Tests\CreditCard;
+use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
+use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
+use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
+use Sli\ExtJsIntegrationBundle\Tests\Group;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>

@@ -1,6 +1,6 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Tests\Service;
+namespace Sli\ExtJsIntegrationBundle\Tests;
 
 use Doctrine\ORM\Mapping as Orm;
 use Sli\ExtJsIntegrationBundle\Service\QueryOrder;

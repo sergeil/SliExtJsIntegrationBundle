@@ -5,38 +5,42 @@ namespace Sli\ExtJsIntegrationBundle\Tests\Service;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use Sli\ExtJsIntegrationBundle\Service\ExpressionManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
+use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
+use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
+use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
+use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 
-require_once __DIR__.'/DummyEntities.php';
+require_once __DIR__.'/../DummyEntities.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
 class ExpressionManagerTest  extends AbstractDatabaseTestCase
 {
-    /* @var \Sli\ExtJsIntegrationBundle\Service\Model */
-    private $model;
+    /* @var ExpressionManager */
+    private $exprMgr;
 
     public function setUp()
     {
-        $this->model = new ExpressionManager(DummyUser::clazz(), self::$em);
+        $this->exprMgr = new ExpressionManager(DummyUser::clazz(), self::$em);
     }
 
     public function testIsValidExpression()
     {
-        $this->assertTrue($this->model->isValidExpression('address.zip'));
-        $this->assertTrue($this->model->isValidExpression('address.street'));
-        $this->assertTrue($this->model->isValidExpression('address.country'));
-        $this->assertFalse($this->model->isValidExpression('address.foo'));
+        $this->assertTrue($this->exprMgr->isValidExpression('address.zip'));
+        $this->assertTrue($this->exprMgr->isValidExpression('address.street'));
+        $this->assertTrue($this->exprMgr->isValidExpression('address.country'));
+        $this->assertFalse($this->exprMgr->isValidExpression('address.foo'));
 
-        $this->assertTrue($this->model->isValidExpression('address'));
-        $this->assertTrue($this->model->isValidExpression('firstname'));
-        $this->assertFalse($this->model->isValidExpression('bar'));
+        $this->assertTrue($this->exprMgr->isValidExpression('address'));
+        $this->assertTrue($this->exprMgr->isValidExpression('firstname'));
+        $this->assertFalse($this->exprMgr->isValidExpression('bar'));
     }
 
     public function testResolveUnexistingAlias()
     {
-        $this->assertNull($this->model->resolveAliasToExpression('jx'));
+        $this->assertNull($this->exprMgr->resolveAliasToExpression('jx'));
     }
 
     /**
@@ -44,21 +48,21 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
      */
     public function testAllocateAliasForNotExistingAssociation()
     {
-        $this->model->allocateAlias('address.foo');
+        $this->exprMgr->allocateAlias('address.foo');
     }
 
     public function testAllocateAliasAndThenResolveAliasToExpression()
     {
-        $alias = $this->model->allocateAlias('address.country');
+        $alias = $this->exprMgr->allocateAlias('address.country');
         $this->assertNotNull($alias);
-        $this->assertSame('address.country', $this->model->resolveAliasToExpression($alias));
+        $this->assertSame('address.country', $this->exprMgr->resolveAliasToExpression($alias));
     }
 
     public function testGetDqlPropertyName()
     {
-        $this->assertEquals('e.firstname', $this->model->getDqlPropertyName('firstname'));
-        $this->assertEquals('j1.name', $this->model->getDqlPropertyName('address.country.name'));
-        $this->assertEquals('j0.zip', $this->model->getDqlPropertyName('address.zip'));
+        $this->assertEquals('e.firstname', $this->exprMgr->getDqlPropertyName('firstname'));
+        $this->assertEquals('j1.name', $this->exprMgr->getDqlPropertyName('address.country.name'));
+        $this->assertEquals('j0.zip', $this->exprMgr->getDqlPropertyName('address.zip'));
     }
 
     public function testInjectJoinsAndExecuteQuery()
@@ -67,8 +71,8 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
         $qb->select('e')
            ->from(DummyUser::clazz(), 'e');
 
-        $dqlPropName = $this->model->getDqlPropertyName('address.country.name');
-        $this->model->injectJoins($qb);
+        $dqlPropName = $this->exprMgr->getDqlPropertyName('address.country.name');
+        $this->exprMgr->injectJoins($qb);
 
         $dqlParts = $qb->getDQLParts();
 
@@ -79,10 +83,10 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
 
     public function testGetMapping()
     {
-        $addressMapping = $this->model->getMapping('address');
-        $addressCountry  = $this->model->getMapping('address.country');
-        $addressZip = $this->model->getMapping('address.zip');
-        $firstname = $this->model->getMapping('firstname');
+        $addressMapping = $this->exprMgr->getMapping('address');
+        $addressCountry  = $this->exprMgr->getMapping('address.country');
+        $addressZip = $this->exprMgr->getMapping('address.zip');
+        $firstname = $this->exprMgr->getMapping('firstname');
 
         $this->assertNotNull($addressMapping);
         $this->assertTrue(is_array($addressMapping));
@@ -107,8 +111,8 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
 
     public function testIsAssociation()
     {
-        $this->assertTrue($this->model->isAssociation('address'));
-        $this->assertTrue($this->model->isAssociation('address.country'));
-        $this->assertFalse($this->model->isAssociation('address.zip'));
+        $this->assertTrue($this->exprMgr->isAssociation('address'));
+        $this->assertTrue($this->exprMgr->isAssociation('address.country'));
+        $this->assertFalse($this->exprMgr->isAssociation('address.zip'));
     }
 }

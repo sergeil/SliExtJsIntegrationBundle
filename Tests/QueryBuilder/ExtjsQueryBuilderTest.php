@@ -7,8 +7,10 @@ use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder;
+use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
+use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 
-require_once __DIR__.'/DummyEntities.php';
+require_once __DIR__.'/../DummyEntities.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
@@ -155,6 +157,23 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
     }
 
     public function testBuildQueryOrderByAssociatedEntity()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'sort' => array(
+                array('property' => 'address', 'direction' => 'DESC')
+            )
+        ));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(3, count($users));
+
+        $this->assertEquals('jane', $users[0]->firstname);
+        $this->assertEquals('john', $users[1]->firstname);
+        $this->assertEquals('vassily', $users[2]->firstname);
+    }
+
+    public function testBuildQueryOrderByAssociatedEntityWithProvidedSortingFieldResolver()
     {
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'sort' => array(
