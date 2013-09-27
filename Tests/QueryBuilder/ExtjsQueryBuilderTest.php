@@ -6,8 +6,11 @@ use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\MutableFieldResolver;
 use Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder;
 use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
+use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
+use Sli\ExtJsIntegrationBundle\Tests\DummyOrder;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 
 require_once __DIR__.'/../DummyEntities.php';
@@ -200,6 +203,29 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals('vassily', $users[0]->firstname);
         $this->assertEquals('jane', $users[1]->firstname);
         $this->assertEquals('john', $users[2]->firstname);
+    }
+
+    public function testBuildQueryOrderByNestedAssociation()
+    {
+        $resolver = new MutableFieldResolver();
+        $resolver->add(DummyOrder::clazz(), 'user', 'address');
+        $resolver->add(DummyUser::clazz(), 'address', 'country');
+        $resolver->add(DummyAddress::clazz(), 'country', 'name');
+
+        $qb = self::$builder->buildQueryBuilder(DummyOrder::clazz(), array(
+            'sort' => array(
+                array('property' => 'user', 'direction' => 'DESC')
+            )
+        ), $resolver);
+
+        $this->assertEquals(4, count($qb->getDQLPart('join'), \COUNT_RECURSIVE)); // there must be three joins
+
+        /* @var DummyOrder[] $result */
+        $result = $qb->getQuery()->getResult();
+
+        $this->assertEquals(2, count($result));
+        $this->assertEquals('ORDER-2', $result[0]->number);
+        $this->assertEquals('ORDER-1', $result[1]->number);
     }
 
     public function testBuildQueryWithMemberOfManyToMany()

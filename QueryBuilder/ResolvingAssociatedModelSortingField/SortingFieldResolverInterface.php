@@ -10,6 +10,7 @@ interface SortingFieldResolverInterface
     /**
      * @param string $entityFqcn
      * @param string $fieldName
+     *
      * @return string
      */
     public function resolve($entityFqcn, $fieldName);

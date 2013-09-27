@@ -182,3 +182,34 @@ class DummyCountry
         return get_called_class();
     }
 }
+
+/**
+ * @Orm\Entity
+ * @Orm\Table(name="sli_extjsintegration_dummyorder")
+ */
+class DummyOrder
+{
+    /**
+     * @Orm\Id
+     * @Orm\Column(type="integer")
+     * @Orm\GeneratedValue(strategy="AUTO")
+     */
+    public $id;
+
+    /**
+     * @var DummyUser
+     *
+     * @Orm\ManyToOne(targetEntity="DummyUser")
+     */
+    public $user;
+
+    /**
+     * @Orm\Column(type="string")
+     */
+    public $number;
+
+    static public function clazz()
+    {
+        return get_called_class();
+    }
+}

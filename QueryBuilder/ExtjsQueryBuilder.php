@@ -18,7 +18,7 @@ use Doctrine\ORM\QueryBuilder;
  *    remoteFilter: true,
  *    remoteSort: true,
  *
- *   fields: [
+ *    fields: [
  *        'id', 'firstname', 'lastname'
  *    ],
  *
@@ -82,10 +82,11 @@ class ExtjsQueryBuilder
     protected function convertValue(ExpressionManager $expressionManager, $expression, $value)
     {
         $mapping = $expressionManager->getMapping($expression);
+
         return $this->mapper->convertValue($value, $mapping['type']);
     }
 
-    protected function parseValue($value)
+    private function parseValue($value)
     {
         // value should always be "comparator:value", ex: "like:Vasya"
         $pos = strpos($value, ':');
@@ -94,6 +95,27 @@ class ExtjsQueryBuilder
         }
 
         return array(substr($value, 0, $pos), substr($value, $pos+1));
+    }
+
+    private function resolveExpression(
+        $entityFqcn, $expression, SortingFieldResolverInterface $sortingFieldResolver, ExpressionManager $exprMgr
+    )
+    {
+        if ($exprMgr->isAssociation($expression)) {
+            $mapping = $exprMgr->getMapping($expression);
+
+            $fieldResolverExpression = explode('.', $expression);
+            $fieldResolverExpression = end($fieldResolverExpression);
+
+            $expression = $this->resolveExpression(
+                $mapping['targetEntity'],
+                $expression. '.' . $sortingFieldResolver->resolve($entityFqcn, $fieldResolverExpression),
+                $sortingFieldResolver,
+                $exprMgr
+            );
+        }
+
+        return $expression;
     }
 
     /**
@@ -112,8 +134,6 @@ class ExtjsQueryBuilder
             $sortingFieldResolver->add($primarySortingFieldResolver);
         }
         $sortingFieldResolver->add($this->sortingFieldResolver);
-
-        $metadata = $this->em->getClassMetadata($entityFqcn);
 
         $expressionManager = new ExpressionManager($entityFqcn, $this->em);
 
@@ -139,18 +159,16 @@ class ExtjsQueryBuilder
                     continue;
                 }
 
-                if (in_array($propertyName, $metadata->getAssociationNames())) {
-                    $associatedScalarProperty = $sortingFieldResolver->resolve($entityFqcn, $propertyName);
-                    $alias = $expressionManager->allocateAlias($propertyName);
-                    $orderStms[] = $alias.'.'.$associatedScalarProperty.' '.$direction;
-                } else {
-                    $orderStms[] = $expressionManager->getDqlPropertyName($propertyName).' '.$direction;
-                }
+                $alias = $expressionManager->getDqlPropertyName(
+                    $this->resolveExpression($entityFqcn, $propertyName, $sortingFieldResolver, $expressionManager)
+                );
+
+                $orderStms[] = $alias . ' ' . $direction;
             }
         }
 
         $qb->add('select', 'e');
-        $qb->add('from', $entityFqcn.' e');
+        $qb->add('from', $entityFqcn . ' e');
 
         if (isset($params['start'])) {
             $start = $params['start'];

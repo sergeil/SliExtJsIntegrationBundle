@@ -64,7 +64,8 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $st = new SchemaTool(self::$em);
 
         $classNames = array(
-            DummyUser::clazz(), DummyAddress::clazz(), DummyCountry::clazz(), CreditCard::clazz(), Group::clazz()
+            DummyUser::clazz(), DummyAddress::clazz(), DummyCountry::clazz(),
+            CreditCard::clazz(), Group::clazz(), DummyOrder::clazz()
         );
         $meta = array();
         foreach ($classNames as $className) {
@@ -76,6 +77,8 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $adminsGroup = new Group();
         $adminsGroup->name = 'admins';
         $em->persist($adminsGroup);
+
+        $users = array();
 
         // populating
         foreach (array('john doe', 'jane doe', 'vassily pupkin') as $fullname) {
@@ -89,26 +92,43 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
 
                 $address = new DummyAddress();
                 $address->country = new DummyCountry();
-                $address->country->name = 'Fairy land';
+                $address->country->name = 'A';
 
                 $address->street = 'foofoo';
                 $address->zip = '1010';
                 $user->address = $address;
             } else if ('jane' == $exp[0]) {
                 $address = new DummyAddress();
+                $address->country = new DummyCountry();
+                $address->country->name = 'B';
                 $address->zip = '2020';
                 $address->street = 'Blahblah';
 
                 $user->address = $address;
             }
 
+            $users[] = $user;
+
             self::$em->persist($user);
         }
+
+        $o1 = new DummyOrder();
+        $o1->number = 'ORDER-1';
+        $o1->user = $users[0];
+
+        $o2 = new DummyOrder();
+        $o2->number = 'ORDER-2';
+        $o2->user = $users[1];
+
+        self::$em->persist($o1);
+        self::$em->persist($o2);
+
         self::$em->flush();
     }
 
     static public function tearDownAfterClass()
     {
+        $orderUserMetadata = self::$em->getClassMetadata(DummyOrder::clazz());
         $dummyUserMetadata = self::$em->getClassMetadata(DummyUser::clazz());
         $dummyAddressMetadata = self::$em->getClassMetadata(DummyAddress::clazz());
         $dummyCountryMetadata = self::$em->getClassMetadata(DummyCountry::clazz());
@@ -117,7 +137,8 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
 
         $st = new SchemaTool(self::$em);
         $st->dropSchema(array(
-            $dummyUserMetadata, $dummyAddressMetadata, $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata
+            $orderUserMetadata, $dummyUserMetadata, $dummyAddressMetadata,
+            $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata
         ));
     }
 }
