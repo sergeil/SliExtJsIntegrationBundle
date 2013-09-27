@@ -7,8 +7,7 @@ use Sli\ExtJsIntegrationBundle\Rendering\RenderersAwareBundle;
 use Symfony\Component\HttpKernel\Kernel;
 
 /**
- * Collects all bundles registered in the Kernel which implement
- * {@class RenderersAwareBundle} interface.
+ * Collects all bundles registered in the Kernel which implement {@class RenderersAwareBundle} interface.
  *
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */

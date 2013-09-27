@@ -6,8 +6,8 @@
 
     <parameters>
         <parameter key="sli.extjsintegration.sorting_field_resolver.class">Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\AnnotationSortingFieldResolver</parameter>
-        <parameter key="sli.extjsintegration.method_invocation_parameters_provider.class">Sli\ExtJsIntegrationBundle\Service\DataMapping\AnnotationMethodInvocationParametersProvider</parameter>
-        <parameter key="sli.extjsintegration.entity_data_mapper.class">Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService</parameter>
+        <parameter key="sli.extjsintegration.method_invocation_parameters_provider.class">Sli\ExtJsIntegrationBundle\DataMapping\AnnotationMethodInvocationParametersProvider</parameter>
+        <parameter key="sli.extjsintegration.entity_data_mapper.class">Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService</parameter>
         <parameter key="sli.extjsintegration.extjs_query_builder.class">Sli\ExtJsIntegrationBundle\QueryBuilder\ExtjsQueryBuilder</parameter>
     </parameters>
 

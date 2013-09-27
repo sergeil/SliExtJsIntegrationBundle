@@ -1,6 +1,6 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Service\DataMapping;
+namespace Sli\ExtJsIntegrationBundle\DataMapping;
 
 use Doctrine\Common\Annotations\Annotation;
 

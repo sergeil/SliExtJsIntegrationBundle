@@ -5,7 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 use Doctrine\ORM\EntityManager;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
-use Sli\ExtJsIntegrationBundle\Service\DataMapping\EntityDataMapperService;
+use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 

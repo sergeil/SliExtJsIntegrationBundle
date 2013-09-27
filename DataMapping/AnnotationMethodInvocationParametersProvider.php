@@ -1,12 +1,12 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Service\DataMapping;
+namespace Sli\ExtJsIntegrationBundle\DataMapping;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Sli\ExtJsIntegrationBundle\Service\DataMapping\Params as ParamsAnn;
+use Sli\ExtJsIntegrationBundle\DataMapping\Params as ParamsAnn;
 
-require_once __DIR__.'/Annotations.php';
+require_once __DIR__ . '/Annotations.php';
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
