@@ -2,16 +2,16 @@
 
 namespace Sli\ExtJsIntegrationBundle\Tests\QueryBuilder\ResolvingAssociatedModelSortingField;
 
-use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\MutableFieldResolver;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\MutableSortingFieldResolver;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class MutableFieldResolverTest extends \PHPUnit_Framework_TestCase
+class MutableSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
 {
     public function testAddAndResolveMethods()
     {
-        $s = new MutableFieldResolver();
+        $s = new MutableSortingFieldResolver();
 
         $this->assertNull($s->resolve('foo', 'blah'));
 

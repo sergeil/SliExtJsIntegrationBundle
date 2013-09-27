@@ -5,7 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortin
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class MutableFieldResolver implements SortingFieldResolverInterface
+class MutableSortingFieldResolver implements SortingFieldResolverInterface
 {
     private $mapping = array();
 

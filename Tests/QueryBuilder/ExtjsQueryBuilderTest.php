@@ -6,8 +6,7 @@ use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\MutableFieldResolver;
-use Sli\ExtJsIntegrationBundle\Service\ExtjsQueryBuilder;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\MutableSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
 use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyOrder;
@@ -207,7 +206,7 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuildQueryOrderByNestedAssociation()
     {
-        $resolver = new MutableFieldResolver();
+        $resolver = new MutableSortingFieldResolver();
         $resolver->add(DummyOrder::clazz(), 'user', 'address');
         $resolver->add(DummyUser::clazz(), 'address', 'country');
         $resolver->add(DummyAddress::clazz(), 'country', 'name');
