@@ -261,10 +261,6 @@ class ExtjsQueryBuilder
                             $orStatements = array();
                             foreach ($value as $orFilter) {
                                 if (in_array($orFilter['comparator'], array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
-                                    if (!$this->isUsefulInFilter($orFilter['comparator'], $orFilter['value'])) {
-                                        continue;
-                                    }
-
                                     $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName);
                                 } else {
                                     $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName, '?' . count($valuesToBind));
