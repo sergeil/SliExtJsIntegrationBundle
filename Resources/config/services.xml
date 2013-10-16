@@ -28,6 +28,7 @@
             <argument type="service" id="security.context" />
             <argument type="service" id="sli.aux.javabeans_ofm" />
             <argument type="service" id="sli.extjsintegration.method_invocation_parameters_provider" />
+            <argument type="service" id="sli.extjsintegration.complex_field_value_converters_provider" />
         </service>
 
         <service id="sli.extjsintegration.extjs_query_builder"
