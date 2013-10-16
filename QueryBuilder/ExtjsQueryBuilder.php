@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
@@ -187,30 +188,30 @@ class ExtjsQueryBuilder
             $valuesToBind = array();
             $andExpr = $qb->expr()->andX();
             foreach ($params['filter'] as $filter) {
-                if (!isset($filter['property']) || !isset($filter['value'])) {
+                $filter = new Filter($filter);
+
+                if (!$filter->isValid()) {
                     continue;
                 }
-                $name = $filter['property'];
+
+//                if (!isset($filter['property']) || !isset($filter['value'])) {
+//                    continue;
+//                }
+//                $name = $filter['property'];
+
+                $name = $filter->getProperty();
 
                 $fieldName = $expressionManager->getDqlPropertyName($name);
 
-                if (in_array($filter['value'], array('isNull', 'isNotNull'))) { // these are sort of 'special case'
+                if (in_array($filter->getComparator(), array(Filter::COMPARATOR_IS_NULL, Filter::COMPARATOR_IS_NOT_NULL))) { // these are sort of 'special case'
                     $andExpr->add(
-                        $qb->expr()->{$filter['value']}($fieldName)
+                        $qb->expr()->{$filter->getComparator()}($fieldName)
                     );
                 } else {
-                    $value = $this->parseValue($filter['value']);
-                    if (false === $value) {
-                        continue;
-                    }
+                    $comparatorName = $filter->getComparator();
+                    $value = $filter->getValue();
 
-                    $comparatorName = $value[0];
-                    if (!in_array($comparatorName, $exprMethods)) {
-                        continue;
-                    }
-
-                    $value = $value[1];
-                    if (in_array($comparatorName, array('in', 'notIn'))) {
+                    if (in_array($comparatorName, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
                         $value = explode(',', $value);
                         if (count($value) == 1 && '' == $value[0]) { // there's no point of having IN('')
                             continue;
