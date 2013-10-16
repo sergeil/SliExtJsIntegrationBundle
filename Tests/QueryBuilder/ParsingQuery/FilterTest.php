@@ -38,6 +38,14 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $f = new Filter(array('property' => 'user', 'value' => 'isNotNull'));
 
         $this->assertTrue($f->isValid());
+
+        $f = new Filter(array('property' => 'user', 'value' => 'in:1,2,5'));
+
+        $this->assertTrue($f->isValid());
+
+        $f = new Filter(array('property' => 'user', 'value' => array('eq:1', 'eq:5')));
+
+        $this->assertTrue($f->isValid());
     }
 
     public function testHowWellItWorksWithGoodInput()
@@ -75,6 +83,42 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertArrayHasKey('value', $compiled);
         $this->assertEquals('user', $compiled['property']);
         $this->assertEquals('isNull', $compiled['value']);
+
+        // ---
+
+        $f = new Filter(array('property' => 'user', 'value' => 'in:1,5,8'));
+        $inValue = $f->getValue();
+
+        $this->assertTrue(is_array($inValue));
+        $this->assertSame(array('1', '5', '8'), $inValue);
+
+        // ---
+
+        $f = new Filter(array('property' => 'user', 'value' => 'in:2,4'));
+        $notInValue = $f->getValue();
+
+        $this->assertTrue(is_array($notInValue));
+        $this->assertSame(array('2', '4'), $notInValue);
+
+        // ---
+
+        $f = new Filter(array('property' => 'user', 'value' => 'in:'));
+
+        $this->assertTrue(is_array($f->getValue()));
+        $this->assertSame(array(), $f->getValue());
+
+        // ---
+
+        $f = new Filter(array('property' => 'user', 'value' => array('eq:5', 'gt:105')));
+
+        $this->assertTrue(is_array($f->getValue()));
+        $this->assertSame(
+            array(
+                array('comparator' => 'eq', 'value' => '5'),
+                array('comparator' => 'gt', 'value' => '105')
+            ),
+            $f->getValue()
+        );
     }
 
     public function testWithIsNullAndIsNotNullComparators()
@@ -92,5 +136,13 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('user', $f->getProperty());
         $this->assertEquals('isNotNull', $f->getComparator());
         $this->assertNull($f->getValue());
+    }
+
+    public function testGetSupportedComparators()
+    {
+        $result = Filter::getSupportedComparators();
+
+        $this->assertTrue(in_array('eq', $result));
+        $this->assertTrue(in_array('neq', $result));
     }
 }

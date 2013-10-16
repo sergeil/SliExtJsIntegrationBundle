@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
@@ -119,6 +120,17 @@ class ExtjsQueryBuilder
     }
 
     /**
+     * @param Filter $filter
+     * @return bool
+     */
+    private function isUsefulInFilter($comparator, $value)
+    {
+        // There's no point point to create empty IN, NOT IN clause, even more - trying to use
+        // empty IN, NOT IN will result in SQL error
+        return !(in_array($comparator, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN)) && count($value) == 0);
+    }
+
+    /**
      * @throws \RuntimeException
      *
      * @param string $entityFqcn  Root fetch entity fully-qualified-class-name
@@ -182,39 +194,29 @@ class ExtjsQueryBuilder
         }
 
         if (isset($params['filter'])) {
-            $exprMethods = get_class_methods($expr);
-
             $valuesToBind = array();
             $andExpr = $qb->expr()->andX();
             foreach ($params['filter'] as $filter) {
-                if (!isset($filter['property']) || !isset($filter['value'])) {
+                $filter = new Filter($filter);
+
+                if (!$filter->isValid()) {
                     continue;
                 }
-                $name = $filter['property'];
+
+                $name = $filter->getProperty();
 
                 $fieldName = $expressionManager->getDqlPropertyName($name);
 
-                if (in_array($filter['value'], array('isNull', 'isNotNull'))) { // these are sort of 'special case'
+                if (in_array($filter->getComparator(), array(Filter::COMPARATOR_IS_NULL, Filter::COMPARATOR_IS_NOT_NULL))) { // these are sort of 'special case'
                     $andExpr->add(
-                        $qb->expr()->{$filter['value']}($fieldName)
+                        $qb->expr()->{$filter->getComparator()}($fieldName)
                     );
                 } else {
-                    $value = $this->parseValue($filter['value']);
-                    if (false === $value) {
-                        continue;
-                    }
+                    $value = $filter->getValue();
+                    $comparatorName = $filter->getComparator();
 
-                    $comparatorName = $value[0];
-                    if (!in_array($comparatorName, $exprMethods)) {
+                    if (!$this->isUsefulInFilter($filter->getComparator(), $filter->getValue())) {
                         continue;
-                    }
-
-                    $value = $value[1];
-                    if (in_array($comparatorName, array('in', 'notIn'))) {
-                        $value = explode(',', $value);
-                        if (count($value) == 1 && '' == $value[0]) { // there's no point of having IN('')
-                            continue;
-                        }
                     }
 
                     // if this is association field, then sometimes there could be just 'no-value'
@@ -229,20 +231,20 @@ class ExtjsQueryBuilder
                     $isAdded = false;
                     if ($expressionManager->isAssociation($name)) {
                         $mapping = $expressionManager->getMapping($name);
-                        if (   in_array($comparatorName, array('in', 'notIn'))
+                        if (   in_array($comparatorName, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))
                             && in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
 
                             $statements = array();
                             foreach ($value as $id) {
                                 $statements[] = sprintf(
-                                    ('notIn' == $comparatorName ? 'NOT ' : '').'?%d MEMBER OF %s',
+                                    (Filter::COMPARATOR_NOT_IN == $comparatorName ? 'NOT ' : '') . '?%d MEMBER OF %s',
                                     count($valuesToBind),
                                     $expressionManager->getDqlPropertyName($name)
                                 );
                                 $valuesToBind[] = $this->convertValue($expressionManager, $name, $id);
                             }
 
-                            if ('in' == $comparatorName) {
+                            if (Filter::COMPARATOR_IN == $comparatorName) {
                                 $andExpr->add(
                                     call_user_func_array(array($qb->expr(), 'orX'), $statements)
                                 );
@@ -255,10 +257,30 @@ class ExtjsQueryBuilder
                     }
 
                     if (!$isAdded) {
-                        $andExpr->add(
-                            $qb->expr()->$comparatorName($fieldName, '?'.count($valuesToBind))
-                        );
-                        $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                        if (is_array($value) && count($value) != count($value, \COUNT_RECURSIVE)) { // must be "OR-ed" ( multi-dimensional array )
+                            $orStatements = array();
+                            foreach ($value as $orFilter) {
+                                if (in_array($orFilter['comparator'], array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
+                                    if (!$this->isUsefulInFilter($orFilter['comparator'], $orFilter['value'])) {
+                                        continue;
+                                    }
+
+                                    $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName);
+                                } else {
+                                    $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName, '?' . count($valuesToBind));
+                                }
+                                $valuesToBind[] = $orFilter['value'];
+                            }
+
+                            $andExpr->add(
+                                call_user_func_array(array($qb->expr(), 'orX'), $orStatements)
+                            );
+                        } else {
+                            $andExpr->add(
+                                $qb->expr()->$comparatorName($fieldName, '?' . count($valuesToBind))
+                            );
+                            $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
+                        }
                     }
                 }
             }

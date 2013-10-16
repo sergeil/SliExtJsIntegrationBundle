@@ -7,10 +7,15 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing;
  */
 class Filter 
 {
+    // supported comparators:
     const COMPARATOR_EQUAL = 'eq';
+    const COMPARATOR_NOT_EQUAL = 'neq';
     const COMPARATOR_LIKE = 'like';
+    const COMPARATOR_NOT_LIKE = 'notLike';
     const COMPARATOR_GREATER_THAN = 'gt';
+    const COMPARATOR_GREATER_THAN_OR_EQUAL = 'gte';
     const COMPARATOR_LESS_THAN = 'lt';
+    const COMPARATOR_LESS_THAN_OR_EQUAL = 'lte';
     const COMPARATOR_IN = 'in';
     const COMPARATOR_NOT_IN = 'notIn';
     const COMPARATOR_IS_NULL = 'isNull';
@@ -18,6 +23,8 @@ class Filter
 
     private $input;
     private $parsedInput;
+
+    static private $supportedComparators;
 
     public function __construct(array $input)
     {
@@ -30,14 +37,16 @@ class Filter
      */
     static public function getSupportedComparators()
     {
-        return array(
-            self::COMPARATOR_EQUAL,
-            self::COMPARATOR_LIKE,
-            self::COMPARATOR_GREATER_THAN,
-            self::COMPARATOR_LESS_THAN,
-            self::COMPARATOR_IS_NULL,
-            self::COMPARATOR_IS_NOT_NULL
-        );
+        if (!self::$supportedComparators) {
+            self::$supportedComparators = array();
+
+            $reflClass = new \ReflectionClass(__CLASS__);
+            foreach ($reflClass->getConstants() as $name=>$value) {
+                self::$supportedComparators[] = $value;
+            }
+        }
+
+        return self::$supportedComparators;
     }
 
     /**
@@ -45,7 +54,33 @@ class Filter
      */
     public function isValid()
     {
-        return !!$this->parsedInput['property'] && in_array($this->parsedInput['comparator'], self::getSupportedComparators());
+        $isValid = !!$this->parsedInput['property'];
+
+        // TODO make sure that OR-ed "comparators" are also valid
+        $isValid = $isValid && (   (null === $this->parsedInput['comparator'] && is_array($this->parsedInput['value']))
+                                || (null !== $this->parsedInput['comparator'] && in_array($this->parsedInput['comparator'], self::getSupportedComparators())));
+
+        return $isValid;
+    }
+
+    private function parseStringFilterValue($value)
+    {
+        $parsed = array();
+
+        $separatorPosition = strpos($value, ':');
+
+        if (false === $separatorPosition && in_array($value, array(self::COMPARATOR_IS_NULL, self::COMPARATOR_IS_NOT_NULL))) {
+            $parsed['comparator'] = $value;
+        } else {
+            $parsed['comparator'] = substr($value, 0, $separatorPosition);
+            $parsed['value'] = substr($value, $separatorPosition + 1);
+
+            if (in_array($parsed['comparator'], array(self::COMPARATOR_IN, self::COMPARATOR_NOT_IN))) {
+                $parsed['value'] = '' != $parsed['value'] ? explode(',', $parsed['value']) : array();
+            }
+        }
+
+        return $parsed;
     }
 
     private function parse(array $input)
@@ -59,14 +94,14 @@ class Filter
         if (isset($input['property'])) {
             $parsed['property'] = $input['property'];
         }
-        if (isset($input['value']) && is_string($input['value'])) {
-            $separatorPosition = strpos($input['value'], ':');
-
-            if (false === $separatorPosition && in_array($input['value'], array(self::COMPARATOR_IS_NULL, self::COMPARATOR_IS_NOT_NULL))) {
-                $parsed['comparator'] = $input['value'];
-            } else {
-                $parsed['comparator'] = substr($input['value'], 0, $separatorPosition);
-                $parsed['value'] = substr($input['value'], $separatorPosition + 1);
+        if (isset($input['value'])) {
+            if (is_string($input['value'])) {
+                $parsed = array_merge($parsed, $this->parseStringFilterValue($input['value']));
+            } else if (is_array($input['value'])) {
+                $parsed['value'] = array();
+                foreach ($input['value'] as $value) {
+                    $parsed['value'][] = $this->parseStringFilterValue($value);
+                }
             }
         }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Tests\Service;
+namespace Sli\ExtJsIntegrationBundle\Tests\QueryBuilder;
 
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Mapping as Orm;
@@ -56,6 +56,17 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(2, count($users));
         $this->assertEquals(1, $users[0]->id);
         $this->assertEquals(3, $users[1]->id);
+    }
+
+    public function testBuildQueryBuilderWithEmptyInFilter()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'id', 'value' => 'in:')
+            )
+        ));
+
+        $qb->getQuery()->getResult();
     }
 
     public function testBuildQueryBuilderWithIsNotNullFilter()
@@ -255,5 +266,29 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         /* @var DummyUser[] $users */
         $users = $qb->getQuery()->getResult();
         $this->assertEquals(2, count($users));
+    }
+
+    /**
+     * @group yoyo
+     */
+    public function testBuildQueryBuilderWithSeveralEqORedFilter()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array(
+                    'property' => 'id',
+                    'value' => array(
+                        'eq:1', 'eq:3' // 1 or 3
+                    )
+                )
+            )
+        ));
+
+//        echo $qb->getDQL() . "\n";
+
+        $users = $qb->getQuery()->getResult();
+        $this->assertEquals(2, count($users));
+        $this->assertEquals(1, $users[0]->id);
+        $this->assertEquals(3, $users[1]->id);
     }
 }

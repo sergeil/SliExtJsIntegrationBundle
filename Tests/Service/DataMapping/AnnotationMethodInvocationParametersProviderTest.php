@@ -2,8 +2,8 @@
 
 namespace Sli\ExtJsIntegrationBundle\Tests\Service\DataMapping;
 
-use Sli\ExtJsIntegrationBundle\Service\DataMapping\AnnotationMethodInvocationParametersProvider as Provider;
-use Sli\ExtJsIntegrationBundle\Service\DataMapping\Params as Params;
+use Sli\ExtJsIntegrationBundle\DataMapping\AnnotationMethodInvocationParametersProvider as Provider;
+use Sli\ExtJsIntegrationBundle\DataMapping\Params as Params;
 use Symfony\Component\DependencyInjection\Container;
 
 class FooEntity
