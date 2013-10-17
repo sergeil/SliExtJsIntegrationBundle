@@ -154,5 +154,13 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('price', $f->getProperty());
         $this->assertEquals(Filter::COMPARATOR_GREATER_THAN, $f->getComparator());
         $this->assertEquals(500, $f->getValue());
+
+        // ---
+
+        $f = Filter::create('shippedAt', Filter::COMPARATOR_IS_NULL);
+        $this->assertInstanceOf(Filter::clazz(), $f);
+        $this->assertEquals('shippedAt', $f->getProperty());
+        $this->assertEquals(Filter::COMPARATOR_IS_NULL, $f->getComparator());
+        $this->assertNull($f->getValue());
     }
 }

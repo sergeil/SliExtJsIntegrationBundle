@@ -49,9 +49,24 @@ class Filter implements FilterInterface
         return self::$supportedComparators;
     }
 
-    static public function create($property, $comparator, $value)
+    /**
+     * @param string $property
+     * @param string $comparator
+     * @param mixed|null $value  Value can be omitted when comparator is COMPARATOR_IS_NULL or COMPARATOR_IS_NOT_NULL
+     *
+     * @return Filter
+     */
+    static public function create($property, $comparator, $value = null)
     {
-        return new self(array('property' => $property, 'value' => "$comparator:$value"));
+        $raw = null;
+
+        if (in_array($comparator, array(self::COMPARATOR_IS_NULL, self::COMPARATOR_IS_NOT_NULL))) {
+            $raw = array('property' => $property, 'value' => $comparator);
+        } else {
+            $raw = array('property' => $property, 'value' => "$comparator:$value");
+        }
+
+        return new self($raw);
     }
 
     /**
