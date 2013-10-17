@@ -1,9 +1,10 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Tests\Service\ParsingQuery;
+namespace Sli\ExtJsIntegrationBundle\Tests\Service\Parsing;
 
-use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
-use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filters;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filters;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrFilter;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
@@ -69,5 +70,37 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
         }
 
         $this->assertEquals(5, count($iteratedFilters));
+    }
+
+    public function testHowWellItWorksWithMixedFilters()
+    {
+        $input = array(
+            array('property' => 'orderTotal', 'value' => array('eq:10', 'eq:20')),
+            array(
+                array('property' => 'user.firstname', 'value' => 'like:Se%'),
+                array('property' => 'user.lastname', 'value' => 'like:Li%')
+            )
+        );
+
+        $filters = new Filters($input);
+
+        $this->assertEquals(2, count($filters));
+        $this->assertInstanceOf(Filter::clazz(), $filters[0]);
+        $this->assertInstanceOf(OrFilter::clazz(), $filters[1]);
+        $this->assertEquals('orderTotal', $filters[0]->getProperty());
+        $this->assertNull($filters[0]->getComparator());
+        $this->assertSame(
+            array(
+                array('comparator' => 'eq', 'value' => '10'),
+                array('comparator' => 'eq', 'value' => '20')
+            ),
+            $filters[0]->getValue()
+        );
+
+        /* @var Filter[] $subFilters */
+        $subFilters = $filters[1]->getFilters();
+
+        $this->assertTrue(is_array($subFilters));
+        $this->assertEquals(2, count($subFilters));
     }
 }

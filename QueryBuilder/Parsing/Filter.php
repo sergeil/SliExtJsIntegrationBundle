@@ -1,11 +1,11 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing;
+namespace Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class Filter 
+class Filter implements FilterInterface
 {
     // supported comparators:
     const COMPARATOR_EQUAL = 'eq';

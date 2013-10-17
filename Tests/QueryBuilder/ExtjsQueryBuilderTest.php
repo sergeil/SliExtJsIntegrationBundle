@@ -286,4 +286,20 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(1, $users[0]->id);
         $this->assertEquals(3, $users[1]->id);
     }
+
+//    public function testBuilderQueryWithOrFilter()
+//    {
+//        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+//            'filter' => array(
+//                array(
+//                    array('property' => 'firstname', 'value' => 'eq:john'),
+//                    array('property' => 'lastname', 'value' => 'like:pup%')
+//                )
+//            )
+//        ));
+//
+//        $users = $qb->getQuery()->getResult();
+//
+//        $this->assertEquals(2, count($users));
+//    }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace Sli\ExtJsIntegrationBundle\Tests\Service\ParsingQuery;
+namespace Sli\ExtJsIntegrationBundle\Tests\Service\Parsing;
 
-use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>

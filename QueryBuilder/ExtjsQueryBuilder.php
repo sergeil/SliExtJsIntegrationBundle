@@ -3,8 +3,8 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
-use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
-use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filters;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filters;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
