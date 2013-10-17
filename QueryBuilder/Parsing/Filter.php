@@ -49,6 +49,11 @@ class Filter implements FilterInterface
         return self::$supportedComparators;
     }
 
+    static public function create($property, $comparator, $value)
+    {
+        return new self(array('property' => $property, 'value' => "$comparator:$value"));
+    }
+
     /**
      * @return bool
      */

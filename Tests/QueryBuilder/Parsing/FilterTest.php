@@ -145,4 +145,14 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue(in_array('eq', $result));
         $this->assertTrue(in_array('neq', $result));
     }
+
+    public function testCreate()
+    {
+        $f = Filter::create('price', Filter::COMPARATOR_GREATER_THAN, 500);
+
+        $this->assertInstanceOf(Filter::clazz(), $f);
+        $this->assertEquals('price', $f->getProperty());
+        $this->assertEquals(Filter::COMPARATOR_GREATER_THAN, $f->getComparator());
+        $this->assertEquals(500, $f->getValue());
+    }
 }
