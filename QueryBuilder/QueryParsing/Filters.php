@@ -5,26 +5,20 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class Filters 
+class Filters
 {
     private $filters;
 
     public function __construct(array $filters)
     {
         foreach ($filters as $rawFilter) {
-            $filter = new Filter($rawFilter);
-            if ($filter->isValid()) {
-                if (!isset($this->filters[$filter->getProperty()])) {
-                    $this->filters[$filter->getProperty()] = array();
-                }
-
-                $this->filters[$filter->getProperty()][] = $filter;
-            }
+            $this->addFilter(new Filter($rawFilter));
         }
     }
 
     /**
      * @param string $property
+     *
      * @return null|Filter[]
      */
     public function findByProperty($property)
@@ -51,6 +45,26 @@ class Filters
         }
 
         return null;
+    }
+
+    /**
+     * @param Filter $filter
+     *
+     * @return bool
+     */
+    public function addFilter(Filter $filter)
+    {
+        if ($filter->isValid()) {
+            if (!isset($this->filters[$filter->getProperty()])) {
+                $this->filters[$filter->getProperty()] = array();
+            }
+
+            $this->filters[$filter->getProperty()][] = $filter;
+
+            return true;
+        }
+
+        return false;
     }
 
     /**

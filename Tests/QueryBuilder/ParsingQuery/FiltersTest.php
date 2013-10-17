@@ -48,7 +48,15 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
         $filters->removeFilter($orderTotalFilters[0]);
 
         $compiled = $filters->compile();
+
         $this->assertTrue(is_array($compiled));
         $this->assertEquals(4, count($compiled));
+
+        $filters->addFilter(new Filter(array('property' => 'address', 'value' => 'like:%Tallinn%')));
+
+        $compiled = $filters->compile();
+
+        $this->assertTrue(is_array($compiled));
+        $this->assertEquals(5, count($compiled));
     }
 }
