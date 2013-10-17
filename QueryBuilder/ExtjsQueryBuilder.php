@@ -3,8 +3,11 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Expr;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\FilterInterface;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filters;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrFilter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
@@ -89,17 +92,6 @@ class ExtjsQueryBuilder
         return $this->mapper->convertValue($value, $mapping['type']);
     }
 
-    private function parseValue($value)
-    {
-        // value should always be "comparator:value", ex: "like:Vasya"
-        $pos = strpos($value, ':');
-        if (false === $pos) {
-            return false;
-        }
-
-        return array(substr($value, 0, $pos), substr($value, $pos+1));
-    }
-
     private function resolveExpression(
         $entityFqcn, $expression, SortingFieldResolverInterface $sortingFieldResolver, ExpressionManager $exprMgr
     )
@@ -139,6 +131,93 @@ class ExtjsQueryBuilder
         return !($exprMgr->isAssociation($propertyName) && '-' === $value);
     }
 
+    private function processFilter(
+        ExpressionManager $expressionManager, Expr\Composite $compositeExpr, QueryBuilder $qb,
+        DoctrineQueryBuilderParametersBinder $binder, Filter $filter
+    )
+    {
+        $name = $filter->getProperty();
+
+        $fieldName = $expressionManager->getDqlPropertyName($name);
+
+        if (in_array($filter->getComparator(), array(Filter::COMPARATOR_IS_NULL, Filter::COMPARATOR_IS_NOT_NULL))) { // these are sort of 'special case'
+            $compositeExpr->add(
+                $qb->expr()->{$filter->getComparator()}($fieldName)
+            );
+        } else {
+            $value = $filter->getValue();
+            $comparatorName = $filter->getComparator();
+
+            if (   !$this->isUsefulInFilter($filter->getComparator(), $filter->getValue())
+                || !$this->isUsefulFilter($expressionManager, $name, $value)) {
+
+                return;
+            }
+
+            // when "IN" is used in conjunction with TO_MANY type of relation,
+            // then we will treat it in a special way and generate "MEMBER OF" queries
+            // instead
+            $isAdded = false;
+            if ($expressionManager->isAssociation($name)) {
+                $mapping = $expressionManager->getMapping($name);
+                if (   in_array($comparatorName, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))
+                    && in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
+
+                    $statements = array();
+                    foreach ($value as $id) {
+                        $statements[] = sprintf(
+                            (Filter::COMPARATOR_NOT_IN == $comparatorName ? 'NOT ' : '') . '?%d MEMBER OF %s',
+                            $binder->getNextIndex(),
+                            $expressionManager->getDqlPropertyName($name)
+                        );
+
+                        $binder->bind($this->convertValue($expressionManager, $name, $id));
+                    }
+
+                    if (Filter::COMPARATOR_IN == $comparatorName) {
+                        $compositeExpr->add(
+                            call_user_func_array(array($qb->expr(), 'orX'), $statements)
+                        );
+                    } else {
+                        $compositeExpr->addMultiple($statements);
+                    }
+
+                    $isAdded = true;
+                }
+            }
+
+            if (!$isAdded) {
+                if (is_array($value) && count($value) != count($value, \COUNT_RECURSIVE)) { // must be "OR-ed" ( multi-dimensional array )
+                    $orStatements = array();
+                    foreach ($value as $orFilter) {
+                        if (   !$this->isUsefulInFilter($orFilter['comparator'], $orFilter['value'])
+                            || !$this->isUsefulFilter($expressionManager, $name, $orFilter['value'])) {
+
+                            continue;
+                        }
+
+                        if (in_array($orFilter['comparator'], array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
+                            $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName);
+                        } else {
+                            $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName, '?' . $binder->getNextIndex());
+                        }
+
+                        $binder->bind($orFilter['value']);
+                    }
+
+                    $compositeExpr->add(
+                        call_user_func_array(array($qb->expr(), 'orX'), $orStatements)
+                    );
+                } else {
+                    $compositeExpr->add(
+                        $qb->expr()->$comparatorName($fieldName, '?' . $binder->getNextIndex())
+                    );
+                    $binder->bind($this->convertValue($expressionManager, $name, $value));
+                }
+            }
+        }
+    }
+
     /**
      * @throws \RuntimeException
      *
@@ -159,7 +238,6 @@ class ExtjsQueryBuilder
         $expressionManager = new ExpressionManager($entityFqcn, $this->em);
 
         $qb = $this->em->createQueryBuilder();
-        $expr = $qb->expr();
 
         $orderStms = array(); // contains ready DQL orderBy statement that later will be joined together
         if (isset($params['sort'])) {
@@ -194,7 +272,7 @@ class ExtjsQueryBuilder
         if (isset($params['start'])) {
             $start = $params['start'];
             if (isset($params['page']) && isset($params['limit'])) {
-                $start = ($params['page']-1) * $params['limit'];
+                $start = ($params['page'] - 1) * $params['limit'];
             }
             $qb->setFirstResult($start);
         }
@@ -203,99 +281,30 @@ class ExtjsQueryBuilder
         }
 
         if (isset($params['filter'])) {
-            $valuesToBind = array();
+            $binder = new DoctrineQueryBuilderParametersBinder($qb);
+
             $andExpr = $qb->expr()->andX();
 
             foreach (new Filters($params['filter']) as $filter) {
-                /* @var Filter $filter */
-
+                /* @var FilterInterface $filter */
                 if (!$filter->isValid()) {
                     continue;
                 }
 
-                $name = $filter->getProperty();
-
-                $fieldName = $expressionManager->getDqlPropertyName($name);
-
-                if (in_array($filter->getComparator(), array(Filter::COMPARATOR_IS_NULL, Filter::COMPARATOR_IS_NOT_NULL))) { // these are sort of 'special case'
-                    $andExpr->add(
-                        $qb->expr()->{$filter->getComparator()}($fieldName)
-                    );
+                if ($filter instanceof OrFilter) {
+                    $orExpr = $qb->expr()->orX();
+                    foreach ($filter->getFilters() as $filter) {
+                        $this->processFilter($expressionManager, $orExpr, $qb, $binder, $filter);
+                    }
+                    $andExpr->add($orExpr);
                 } else {
-                    $value = $filter->getValue();
-                    $comparatorName = $filter->getComparator();
-
-                    if (   !$this->isUsefulInFilter($filter->getComparator(), $filter->getValue())
-                        || !$this->isUsefulFilter($expressionManager, $name, $value)) {
-
-                        continue;
-                    }
-
-                    // when "IN" is used in conjunction with TO_MANY type of relation,
-                    // then we will treat it in a special way and generate "MEMBER OF" queries
-                    // instead
-                    $isAdded = false;
-                    if ($expressionManager->isAssociation($name)) {
-                        $mapping = $expressionManager->getMapping($name);
-                        if (   in_array($comparatorName, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))
-                            && in_array($mapping['type'], array(CMI::ONE_TO_MANY, CMI::MANY_TO_MANY))) {
-
-                            $statements = array();
-                            foreach ($value as $id) {
-                                $statements[] = sprintf(
-                                    (Filter::COMPARATOR_NOT_IN == $comparatorName ? 'NOT ' : '') . '?%d MEMBER OF %s',
-                                    count($valuesToBind),
-                                    $expressionManager->getDqlPropertyName($name)
-                                );
-                                $valuesToBind[] = $this->convertValue($expressionManager, $name, $id);
-                            }
-
-                            if (Filter::COMPARATOR_IN == $comparatorName) {
-                                $andExpr->add(
-                                    call_user_func_array(array($qb->expr(), 'orX'), $statements)
-                                );
-                            } else {
-                                $andExpr->addMultiple($statements);
-                            }
-
-                            $isAdded = true;
-                        }
-                    }
-
-                    if (!$isAdded) {
-                        if (is_array($value) && count($value) != count($value, \COUNT_RECURSIVE)) { // must be "OR-ed" ( multi-dimensional array )
-                            $orStatements = array();
-                            foreach ($value as $orFilter) {
-                                if (   !$this->isUsefulInFilter($orFilter['comparator'], $orFilter['value'])
-                                    || !$this->isUsefulFilter($expressionManager, $name, $orFilter['value'])) {
-
-                                    continue;
-                                }
-
-                                if (in_array($orFilter['comparator'], array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
-                                    $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName);
-                                } else {
-                                    $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName, '?' . count($valuesToBind));
-                                }
-                                $valuesToBind[] = $orFilter['value'];
-                            }
-
-                            $andExpr->add(
-                                call_user_func_array(array($qb->expr(), 'orX'), $orStatements)
-                            );
-                        } else {
-                            $andExpr->add(
-                                $qb->expr()->$comparatorName($fieldName, '?' . count($valuesToBind))
-                            );
-                            $valuesToBind[] = $this->convertValue($expressionManager, $name, $value);
-                        }
-                    }
+                    $this->processFilter($expressionManager, $andExpr, $qb, $binder, $filter);
                 }
             }
 
             if ($andExpr->count() > 0) {
                 $qb->where($andExpr);
-                $qb->setParameters($valuesToBind);
+                $binder->injectParameters();
             }
         }
 
