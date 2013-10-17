@@ -5,9 +5,12 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class Filters
+class Filters implements \Iterator
 {
     private $filters;
+
+    private $iterableFilters = array();
+    private $iteratorIndex = 0;
 
     public function __construct(array $filters)
     {
@@ -60,6 +63,7 @@ class Filters
             }
 
             $this->filters[$filter->getProperty()][] = $filter;
+            $this->iterableFilters[] = $filter;
 
             return true;
         }
@@ -94,6 +98,19 @@ class Filters
 
             $this->filters[$filter->getProperty()] = $siftedResult;
 
+            // dealing with iterator
+
+            $siftedResult = array();
+            foreach ($this->iterableFilters as $currentFilter) {
+                if ($currentFilter === $filter) {
+                    continue;
+                }
+
+                $siftedResult[] = $currentFilter;
+            }
+
+            $this->iterableFilters = $siftedResult;
+
             return true;
         }
 
@@ -115,5 +132,33 @@ class Filters
         }
 
         return $result;
+    }
+
+    // iterator:
+
+    public function current()
+    {
+        return $this->iterableFilters[$this->iteratorIndex];
+    }
+
+    public function next()
+    {
+        $this->iteratorIndex++;
+    }
+
+    public function key()
+    {
+        return $this->iteratorIndex;
+    }
+
+    public function valid()
+    {
+        return isset($this->iterableFilters[$this->iteratorIndex]);
+    }
+
+    public function rewind()
+    {
+        $this->iteratorIndex = 0;
+        reset($this->iterableFilters);
     }
 }

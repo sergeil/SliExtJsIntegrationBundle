@@ -24,6 +24,9 @@ class ExpressionManager
         $this->rootAlias = $rootAlias;
     }
 
+    /**
+     * @return string
+     */
     public function getRootAlias()
     {
         return $this->rootAlias;
@@ -73,9 +76,11 @@ class ExpressionManager
     }
 
     /**
-     * @param string $expression
-     * @return string
      * @throws \RuntimeException
+     *
+     * @param string $expression
+     *
+     * @return string
      */
     public function allocateAlias($expression)
     {
@@ -111,6 +116,7 @@ class ExpressionManager
 
     /**
      * @param string $alias
+     *
      * @return string|null Expression for the provided $alias, if $alias is not found, NULL is returned
      */
     public function resolveAliasToExpression($alias)
@@ -119,8 +125,9 @@ class ExpressionManager
     }
 
     /**
-     * @param $expression
-     * @return string|false  Alias for a given $expression, if expression is not found, then FALSE is returned
+     * @param string $expression
+     *
+     * @return string|false  Alias for a given $expression. If expression is not found, then FALSE is returned
      */
     public function resolveExpressionToAlias($expression)
     {
@@ -129,7 +136,9 @@ class ExpressionManager
 
     /**
      * @throws \RuntimeException
+     *
      * @param string $expression  Last segment of expression must not be a relation
+     *
      * @return string For a given $expression, will return a correct variable name with alias that you
      *                can you in your DQL
      */
@@ -146,19 +155,23 @@ class ExpressionManager
         }
     }
 
+    /**
+     * @param QueryBuilder $qb
+     * @param bool $injectSelects  If provided then "fetch" joins will be used
+     */
     public function injectJoins(QueryBuilder $qb, $injectSelects = true)
     {
-        $i=0;
+        $i = 0;
         foreach ($this->allocatedAliases as $alias=>$expression) {
             $parsedExpression = explode('.', $expression);
             if (0 == $i) {
-                $qb->leftJoin($this->rootAlias.'.'.$expression, $alias);
+                $qb->leftJoin($this->rootAlias .'.'. $expression, $alias);
             } else if (count($parsedExpression) == 1) {
-                $qb->leftJoin($this->rootAlias.'.'.$parsedExpression[0], $alias);
+                $qb->leftJoin($this->rootAlias .'.'. $parsedExpression[0], $alias);
             } else {
                 $previousAlias = array_keys($this->allocatedAliases);
                 $previousAlias = $previousAlias[$i-1];
-                $qb->leftJoin($previousAlias.'.'.$parsedExpression[count($parsedExpression)-1], $alias);
+                $qb->leftJoin($previousAlias . '.' . $parsedExpression[count($parsedExpression)-1], $alias);
             }
             $i++;
         }
@@ -179,7 +192,9 @@ class ExpressionManager
 
     /**
      * @throws \RuntimeException
+     *
      * @param string $expression
+     *
      * @return array  Doctrine field's mapping
      */
     public function getMapping($expression)
@@ -203,6 +218,11 @@ class ExpressionManager
         }
     }
 
+    /**
+     * @param string $expression
+     *
+     * @return bool
+     */
     public function isAssociation($expression)
     {
         $this->validateExpression($expression);

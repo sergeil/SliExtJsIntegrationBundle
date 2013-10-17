@@ -268,9 +268,6 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(2, count($users));
     }
 
-    /**
-     * @group yoyo
-     */
     public function testBuildQueryBuilderWithSeveralEqORedFilter()
     {
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
@@ -283,8 +280,6 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
                 )
             )
         ));
-
-//        echo $qb->getDQL() . "\n";
 
         $users = $qb->getQuery()->getResult();
         $this->assertEquals(2, count($users));

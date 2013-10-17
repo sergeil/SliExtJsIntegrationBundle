@@ -4,11 +4,13 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filter;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\QueryParsing\Filters;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
+use Sli\ExtJsIntegrationBundle\Service\ExpressionManager;
 
 /**
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
@@ -130,6 +132,13 @@ class ExtjsQueryBuilder
         return !(in_array($comparator, array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN)) && count($value) == 0);
     }
 
+    private function isUsefulFilter(ExpressionManager $exprMgr, $propertyName, $value)
+    {
+        // if this is association field, then sometimes there could be just 'no-value'
+        // state which is conventionally marked as '-' value
+        return !($exprMgr->isAssociation($propertyName) && '-' === $value);
+    }
+
     /**
      * @throws \RuntimeException
      *
@@ -196,8 +205,9 @@ class ExtjsQueryBuilder
         if (isset($params['filter'])) {
             $valuesToBind = array();
             $andExpr = $qb->expr()->andX();
-            foreach ($params['filter'] as $filter) {
-                $filter = new Filter($filter);
+
+            foreach (new Filters($params['filter']) as $filter) {
+                /* @var Filter $filter */
 
                 if (!$filter->isValid()) {
                     continue;
@@ -215,13 +225,9 @@ class ExtjsQueryBuilder
                     $value = $filter->getValue();
                     $comparatorName = $filter->getComparator();
 
-                    if (!$this->isUsefulInFilter($filter->getComparator(), $filter->getValue())) {
-                        continue;
-                    }
+                    if (   !$this->isUsefulInFilter($filter->getComparator(), $filter->getValue())
+                        || !$this->isUsefulFilter($expressionManager, $name, $value)) {
 
-                    // if this is association field, then sometimes there could be just 'no-value'
-                    // state which is conventionally marked as '-' value
-                    if ($expressionManager->isAssociation($name) && '-' === $value) {
                         continue;
                     }
 
@@ -260,6 +266,12 @@ class ExtjsQueryBuilder
                         if (is_array($value) && count($value) != count($value, \COUNT_RECURSIVE)) { // must be "OR-ed" ( multi-dimensional array )
                             $orStatements = array();
                             foreach ($value as $orFilter) {
+                                if (   !$this->isUsefulInFilter($orFilter['comparator'], $orFilter['value'])
+                                    || !$this->isUsefulFilter($expressionManager, $name, $orFilter['value'])) {
+
+                                    continue;
+                                }
+
                                 if (in_array($orFilter['comparator'], array(Filter::COMPARATOR_IN, Filter::COMPARATOR_NOT_IN))) {
                                     $orStatements[] = $qb->expr()->{$orFilter['comparator']}($fieldName);
                                 } else {

@@ -45,6 +45,8 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
         }
         $this->assertNotNull($thrownException);
 
+        // ---
+
         $filters->removeFilter($orderTotalFilters[0]);
 
         $compiled = $filters->compile();
@@ -58,5 +60,14 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue(is_array($compiled));
         $this->assertEquals(5, count($compiled));
+
+        // --- iterator
+
+        $iteratedFilters = array();
+        foreach ($filters as $filter) {
+            $iteratedFilters[] = $filter;
+        }
+
+        $this->assertEquals(5, count($iteratedFilters));
     }
 }
