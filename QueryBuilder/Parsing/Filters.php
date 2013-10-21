@@ -45,6 +45,21 @@ class Filters implements \Iterator, \Countable, \ArrayAccess
     }
 
     /**
+     * @param string $property
+     * @param string $comparator
+     *
+     * @return Filter
+     */
+    public function findOneByPropertyAndComparator($property, $comparator)
+    {
+        foreach ($this->filters as $filter) {
+            if ($filter instanceof Filter && $filter->getProperty() == $property && $filter->getComparator() == $comparator) {
+                return $filter;
+            }
+        }
+    }
+
+    /**
      * @throws \RuntimeException
      *
      * @param string $property

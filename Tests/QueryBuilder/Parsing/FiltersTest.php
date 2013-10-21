@@ -23,6 +23,14 @@ class FiltersTest extends \PHPUnit_Framework_TestCase
 
         $filters = new Filters($input);
 
+        $orderTotalGt = $filters->findOneByPropertyAndComparator('orderTotal', Filter::COMPARATOR_GREATER_THAN);
+
+        $this->assertInstanceOf(Filter::clazz(), $orderTotalGt);
+        $this->assertEquals('orderTotal', $orderTotalGt->getProperty());
+        $this->assertEquals('gt', $orderTotalGt->getComparator());
+
+        // ---
+
         $orderTotalFilters = $filters->findByProperty('orderTotal');
 
         $this->assertTrue(is_array($orderTotalFilters));
