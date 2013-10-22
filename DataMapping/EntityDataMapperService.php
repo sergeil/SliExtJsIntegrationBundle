@@ -47,6 +47,7 @@ class EntityDataMapperService
 
     /**
      * @throws \RuntimeException
+     *
      * @return array
      */
     protected function getUserPreferences()
@@ -64,18 +65,22 @@ class EntityDataMapperService
         return $u->getPreferences();
     }
 
+    protected function getPreferencesValue($keyName)
+    {
+        $p = $this->getUserPreferences();
+        if (!isset($p[$keyName])) {
+            throw new \RuntimeException(
+                sprintf('User preferences must contain configuration for "%s"', $keyName)
+            );
+        }
+
+        return $p[$keyName];
+    }
+
     public function convertDate($clientValue)
     {
         if ($clientValue != '') {
-            $p = $this->getUserPreferences();
-
-            $keyName = PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT;
-            if (!isset($p[$keyName])) {
-                throw new \RuntimeException(
-                    sprintf('User preferences must contain configuration for "%s"', $keyName)
-                );
-            }
-            $format = $p[$keyName];
+            $format = $this->getPreferencesValue(PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT);
 
             $rawClientValue = $clientValue;
             $clientValue = \DateTime::createFromFormat($format, $clientValue);
@@ -85,9 +90,27 @@ class EntityDataMapperService
                 );
             }
             return $clientValue;
-        } else {
-            return null;
         }
+
+        return null;
+    }
+
+    public function convertDateTime($clientValue)
+    {
+        if ($clientValue != '') {
+            $format = $this->getPreferencesValue(PreferencesAwareUserInterface::SETTINGS_DATETIME_FORMAT);
+
+            $rawClientValue = $clientValue;
+            $clientValue = \DateTime::createFromFormat($format, $clientValue);
+            if (!$clientValue) {
+                throw new \RuntimeException(
+                    "Unable to map a datetime, unable to transform date-value of '$rawClientValue' to '$format' format."
+                );
+            }
+            return $clientValue;
+        }
+
+        return null;
     }
 
     public function convertValue($clientValue, $fieldType)
@@ -98,7 +121,7 @@ class EntityDataMapperService
             case 'date':
                 return $this->convertDate($clientValue);
             case 'datetime':
-                return $this->convertDate($clientValue);
+                return $this->convertDateTime($clientValue);
         }
 
         return $clientValue;
@@ -138,7 +161,7 @@ class EntityDataMapperService
                 // Doctrine will look if this field isNullable etc ... and throw
                 // an exception if needed
                 if (     !(in_array($mapping['type'], array('integer', 'smallint', 'bigint', 'decimal', 'float'))
-                      && '' === $value)) {
+                    && '' === $value)) {
                     try {
                         $methodParams = $this->paramsProvider->getParameters(get_class($entity), $this->fm->formatSetterName($fieldName));
 
@@ -164,7 +187,7 @@ class EntityDataMapperService
                 }
             }
         }
-        
+
         foreach ($metadata->getAssociationMappings() as $mapping) {
             $fieldName = $mapping['fieldName'];
 
@@ -284,8 +307,8 @@ class EntityDataMapperService
 
         $qb = $this->em->createQueryBuilder();
         $qb->select('e')
-           ->from($entityFqcn, 'e')
-           ->where($qb->expr()->in('e.id', $ids));
+            ->from($entityFqcn, 'e')
+            ->where($qb->expr()->in('e.id', $ids));
 
         return $qb->getQuery()->getResult();
     }
