@@ -30,6 +30,7 @@ abstract class AbstractExdDecisionManager implements EscapingDecisionManagerInte
                 }
             }
         }
+
         return true;
     }
 

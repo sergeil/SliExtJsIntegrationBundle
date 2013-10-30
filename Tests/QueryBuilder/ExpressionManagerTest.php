@@ -58,6 +58,23 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
         $this->assertSame('address.country', $this->exprMgr->resolveAliasToExpression($alias));
     }
 
+    public function testAllocateSeveralAliasesWhichShareTheSameRoot()
+    {
+        $countryAlias = $this->exprMgr->allocateAlias('address.country');
+        $this->assertNotNull($countryAlias);
+
+        $presidentAlias = $this->exprMgr->allocateAlias('address.country.president');
+        $this->assertNotNull($presidentAlias);
+
+        $aliases = $this->exprMgr->getAllocatedAliasMap();
+        $aliasesWitNoDuplicates = array_unique($aliases);
+
+        $addressAlias = $this->exprMgr->allocateAlias('address');
+        $this->assertNotNull($addressAlias);
+
+        $this->assertEquals(count($aliases), count($aliasesWitNoDuplicates));
+    }
+
     public function testGetDqlPropertyName()
     {
         $this->assertEquals('e.firstname', $this->exprMgr->getDqlPropertyName('firstname'));

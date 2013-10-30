@@ -65,7 +65,8 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
 
         $classNames = array(
             DummyUser::clazz(), DummyAddress::clazz(), DummyCountry::clazz(),
-            CreditCard::clazz(), Group::clazz(), DummyOrder::clazz()
+            CreditCard::clazz(), Group::clazz(), DummyOrder::clazz(),
+            President::clazz()
         );
         $meta = array();
         foreach ($classNames as $className) {

@@ -14,7 +14,7 @@ class ExpressionManager
     private $em;
 
     private $rootAlias;
-    public $allocatedAliases = array();
+    private $allocatedAliases = array();
     private $validatedExpressions = array();
 
     public function __construct($fqcn, EntityManager $em, $rootAlias = 'e')
@@ -22,6 +22,17 @@ class ExpressionManager
         $this->fqcn = $fqcn;
         $this->em = $em;
         $this->rootAlias = $rootAlias;
+    }
+
+    /**
+     * Don't use nor rely on this method existence!
+     *
+     * @internal
+     * @return array
+     */
+    public function getAllocatedAliasMap()
+    {
+        return $this->allocatedAliases;
     }
 
     /**
@@ -40,6 +51,7 @@ class ExpressionManager
         if (!isset($this->validatedExpressions[$expression])) {
             $this->validatedExpressions[$expression] = $this->doIsValidExpression($expression);
         }
+
         return $this->validatedExpressions[$expression];
     }
 
@@ -99,7 +111,7 @@ class ExpressionManager
             $meta = $this->em->getClassMetadata($mapping['targetEntity']);
 
             $currentExpression = implode('.', array_slice($parsedExpression, 0, $index+1));
-            if (!$this->resolveExpressionToAlias($expression)) {
+            if (!$this->resolveExpressionToAlias($expression) && !$this->resolveExpressionToAlias($currentExpression)) {
                 $this->doAllocateAlias($currentExpression);
             }
         }
@@ -107,10 +119,18 @@ class ExpressionManager
         return $this->resolveExpressionToAlias($expression);
     }
 
-    protected function doAllocateAlias($expression)
+    /**
+     * Allocates a DQL join alias for a given $expression
+     *
+     * @param string $expression
+     *
+     * @return string
+     */
+    private function doAllocateAlias($expression)
     {
-        $alias = 'j'.count($this->allocatedAliases);
+        $alias = 'j' . count($this->allocatedAliases);
         $this->allocatedAliases[$alias] = $expression;
+
         return $alias;
     }
 
@@ -151,23 +171,23 @@ class ExpressionManager
             $propertyName = array_pop($parsedExpression);
             return $this->allocateAlias(implode('.', $parsedExpression)).'.'.$propertyName;
         } else {
-            return $this->getRootAlias().'.'.$expression;
+            return $this->getRootAlias() . '.' . $expression;
         }
     }
 
     /**
      * @param QueryBuilder $qb
-     * @param bool $injectSelects  If provided then "fetch" joins will be used
+     * @param bool $fetchJoins  If provided then "fetch" joins will be used
      */
-    public function injectJoins(QueryBuilder $qb, $injectSelects = true)
+    public function injectJoins(QueryBuilder $qb, $fetchJoins = true)
     {
         $i = 0;
         foreach ($this->allocatedAliases as $alias=>$expression) {
             $parsedExpression = explode('.', $expression);
             if (0 == $i) {
-                $qb->leftJoin($this->rootAlias .'.'. $expression, $alias);
+                $qb->leftJoin($this->rootAlias . '.' . $expression, $alias);
             } else if (count($parsedExpression) == 1) {
-                $qb->leftJoin($this->rootAlias .'.'. $parsedExpression[0], $alias);
+                $qb->leftJoin($this->rootAlias . '.' . $parsedExpression[0], $alias);
             } else {
                 $previousAlias = array_keys($this->allocatedAliases);
                 $previousAlias = $previousAlias[$i-1];
@@ -176,7 +196,7 @@ class ExpressionManager
             $i++;
         }
 
-        if ($injectSelects) {
+        if ($fetchJoins) {
             $selects = array();
             foreach ($qb->getDQLPart('select') as $select) {
                 /* @var \Doctrine\ORM\Query\Expr\Select $select */

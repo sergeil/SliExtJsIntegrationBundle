@@ -177,6 +177,35 @@ class DummyCountry
      */
     public $name;
 
+    /**
+     * @Orm\OneToOne(targetEntity="President")
+     */
+    public $president;
+
+    static public function clazz()
+    {
+        return get_called_class();
+    }
+}
+
+/**
+ * @Orm\Entity
+ * @Orm\Table(name="sli_extjsintegration_president")
+ */
+class President
+{
+    /**
+     * @Orm\Id
+     * @Orm\Column(type="integer")
+     * @Orm\GeneratedValue(strategy="AUTO")
+     */
+    public $id;
+
+    /**
+     * @Orm\Column(type="date")
+     */
+    public $since;
+
     static public function clazz()
     {
         return get_called_class();
