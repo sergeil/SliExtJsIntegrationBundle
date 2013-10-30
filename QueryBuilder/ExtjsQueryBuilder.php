@@ -13,7 +13,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField
 use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
-use Sli\ExtJsIntegrationBundle\Service\ExpressionManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
 
 /**
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
@@ -309,12 +309,10 @@ class ExtjsQueryBuilder
         }
 
         if (isset($params['fetch']) && is_array($params['fetch'])) {
-            foreach ($params['fetch'] as $expression) {
-                $qb->addSelect($expressionManager->allocateAlias($expression));
-            }
+            $expressionManager->injectFetchSelects($qb, $params['fetch']);
+        } else {
+            $expressionManager->injectJoins($qb, false);
         }
-
-        $expressionManager->injectJoins($qb, false);
 
         if (count($orderStms) > 0) {
             $qb->add('orderBy', implode(', ', $orderStms));

@@ -98,6 +98,20 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(1, $users[1]->id);
     }
 
+    public function testBuildQueryWithJoins()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array('property' => 'address.country.name', 'value' => 'eq:A')
+            )
+        ));
+
+        /** @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertEquals(1, count($users));
+    }
+
     public function testBuildQueryWithFetch()
     {
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
@@ -106,7 +120,15 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
             )
         ));
 
-        $this->assertEquals(2, count($qb->getDQLPart('select')));
+        // fetch for root, for address, and for address.country
+        $this->assertEquals(3, count($qb->getDQLPart('select')));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertInstanceof(DummyUser::clazz(), $users[0]);
+        $this->assertFalse($users[0]->address instanceof \Doctrine\ORM\Proxy\Proxy);
+        $this->assertFalse($users[0]->address->country instanceof \Doctrine\ORM\Proxy\Proxy);
     }
 
     public function testBuildQueryBuilderWhereUserAddressZip()
@@ -136,6 +158,7 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
             )
         ));
 
+        /* @var DummyUser[] $users */
         $users = $qb->getQuery()->getResult();
         $this->assertEquals(3, count($users));
     }

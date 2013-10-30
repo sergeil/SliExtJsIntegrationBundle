@@ -92,7 +92,7 @@ class ExpressionManager
      *
      * @param string $expression
      *
-     * @return string
+     * @return string  Alias to given $expression
      */
     public function allocateAlias($expression)
     {
@@ -169,20 +169,34 @@ class ExpressionManager
         if (strpos($expression, '.') !== false) { // associative expression
             $parsedExpression = explode('.', $expression);
             $propertyName = array_pop($parsedExpression);
-            return $this->allocateAlias(implode('.', $parsedExpression)).'.'.$propertyName;
+            return $this->allocateAlias(implode('.', $parsedExpression)) . '.' . $propertyName;
         } else {
             return $this->getRootAlias() . '.' . $expression;
         }
     }
 
     /**
-     * @param QueryBuilder $qb
-     * @param bool $fetchJoins  If provided then "fetch" joins will be used
+     * @param string $expression
+     *
+     * @return array
      */
-    public function injectJoins(QueryBuilder $qb, $fetchJoins = true)
+    private function expandExpression($expression)
     {
-        $i = 0;
-        foreach ($this->allocatedAliases as $alias=>$expression) {
+        $result = array();
+
+        $explodedExpression = explode('.', $expression);
+        foreach ($explodedExpression as $i=>$segment) {
+            $result[] = implode('.', array_slice($explodedExpression, 0, $i+1));
+        }
+
+        return $result;
+    }
+
+    private function doInjectJoins(QueryBuilder $qb, array $expressions)
+    {
+        foreach (array_values($expressions) as $i=>$expression) {
+            $alias = $this->resolveExpressionToAlias($expression);
+
             $parsedExpression = explode('.', $expression);
             if (0 == $i) {
                 $qb->leftJoin($this->rootAlias . '.' . $expression, $alias);
@@ -193,21 +207,57 @@ class ExpressionManager
                 $previousAlias = $previousAlias[$i-1];
                 $qb->leftJoin($previousAlias . '.' . $parsedExpression[count($parsedExpression)-1], $alias);
             }
-            $i++;
+        }
+    }
+
+    /**
+     * @param QueryBuilder $qb
+     * @param bool $useFetchJoins  If provided then joined entities will be fetched as well
+     */
+    public function injectJoins(QueryBuilder $qb, $useFetchJoins = true)
+    {
+        if ($useFetchJoins) {
+            $this->injectFetchSelects($qb, array_values($this->allocatedAliases));
+        } else {
+            $this->doInjectJoins($qb, $this->allocatedAliases);
+        }
+    }
+
+    /**
+     * When selects are injected then apparently the joins will be added to the query as well, so you either
+     * use this method or injectJoins() but not both of them at the same time.
+     *
+     * @param QueryBuilder $qb
+     * @param array $expressions
+     */
+    public function injectFetchSelects(QueryBuilder $qb, array $expressions)
+    {
+        $expandedExpressions = array();
+        foreach ($expressions as $expression) {
+            $expandedExpressions = array_merge($expandedExpressions, $this->expandExpression($expression));
+        }
+        $expandedExpressions = array_values(array_unique($expandedExpressions));
+
+        $selects = array();
+        foreach ($qb->getDQLPart('select') as $select) {
+            /* @var \Doctrine\ORM\Query\Expr\Select $select */
+            $selects[] = trim((string)$select);
         }
 
-        if ($fetchJoins) {
-            $selects = array();
-            foreach ($qb->getDQLPart('select') as $select) {
-                /* @var \Doctrine\ORM\Query\Expr\Select $select */
-                $selects[] = trim($select->__toString());
-            }
-            foreach ($this->allocatedAliases as $alias=>$expression) {
-                if (!in_array($alias, $selects)) {
-                    $qb->addSelect($alias);
-                }
+        $map = array();
+        foreach ($expandedExpressions as $expression) {
+            $this->allocateAlias($expression);
+
+            $map[$this->resolveExpressionToAlias($expression)] = $expression;
+        }
+
+        foreach ($map as $alias=>$expression) {
+            if (!in_array($alias, $selects)) {
+                $qb->addSelect($alias);
             }
         }
+
+        $this->doInjectJoins($qb, $expandedExpressions);
     }
 
     /**

@@ -82,13 +82,18 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
         $this->assertEquals('j0.zip', $this->exprMgr->getDqlPropertyName('address.zip'));
     }
 
-    public function testInjectJoinsAndExecuteQuery()
+    /**
+     * @group joining
+     */
+    public function testInjectJoins()
     {
         $qb = self::$em->createQueryBuilder();
         $qb->select('e')
            ->from(DummyUser::clazz(), 'e');
 
-        $dqlPropName = $this->exprMgr->getDqlPropertyName('address.country.name');
+        $addressCountryNameAlias = $this->exprMgr->getDqlPropertyName('address.country.name');
+        $this->assertNotNull($addressCountryNameAlias);
+
         $this->exprMgr->injectJoins($qb);
 
         $dqlParts = $qb->getDQLParts();
@@ -96,6 +101,50 @@ class ExpressionManagerTest  extends AbstractDatabaseTestCase
         $this->assertArrayHasKey('e', $dqlParts['join']);
         $this->assertEquals(2, count($dqlParts['join']['e']));
         $this->assertEquals(3, count($dqlParts['select']));
+
+        $injectedFetchAliases = array();
+        foreach ($dqlParts['select'] as $select) {
+            $injectedFetchAliases[] = (string)$select;
+        };
+
+        $this->assertTrue(
+            in_array($this->exprMgr->resolveExpressionToAlias('address'), $injectedFetchAliases)
+        );
+        $this->assertTrue(
+            in_array($this->exprMgr->resolveExpressionToAlias('address.country'), $injectedFetchAliases)
+        );
+    }
+
+    public function testInjectJoinsWhenNoFetchingIsUsed()
+    {
+        $qb = self::$em->createQueryBuilder();
+        $qb->select('e')
+            ->from(DummyUser::clazz(), 'e');
+
+        $this->exprMgr->getDqlPropertyName('address.country.name');
+        $this->exprMgr->injectJoins($qb, false);
+
+        $dqlParts = $qb->getDQLParts();
+
+        $this->assertEquals(2, count($dqlParts['join']['e']));
+        $this->assertEquals(1, count($dqlParts['select']));
+        $this->assertEquals($this->exprMgr->getRootAlias(), (string)$dqlParts['select'][0]);
+    }
+
+    public function testInjectFetchJoins()
+    {
+        $qb = self::$em->createQueryBuilder();
+        $qb->select('e')
+            ->from(DummyUser::clazz(), 'e');
+
+        $this->exprMgr->injectFetchSelects($qb, array('address.country'));
+
+        $dqlParts = $qb->getDQLParts();
+
+        $this->assertEquals(3, count($dqlParts['select']));
+        $this->assertEquals(1, count($dqlParts['join']));
+        $this->assertArrayHasKey($this->exprMgr->getRootAlias(), $dqlParts['join']);
+        $this->assertEquals(2, count($dqlParts['join']['e']));
     }
 
     public function testGetMapping()
