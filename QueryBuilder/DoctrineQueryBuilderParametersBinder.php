@@ -35,7 +35,6 @@ class DoctrineQueryBuilderParametersBinder
         return count($this->values);
     }
 
-
     public function injectParameters()
     {
         $this->qb->setParameters($this->values);

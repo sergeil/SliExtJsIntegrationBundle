@@ -4,6 +4,7 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\FilterInterface;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filters;
@@ -235,11 +236,13 @@ class ExtjsQueryBuilder
         }
         $sortingFieldResolver->add($this->sortingFieldResolver);
 
-        $expressionManager = new ExpressionManager($entityFqcn, $this->em);
-
         $qb = $this->em->createQueryBuilder();
 
-        $orderStms = array(); // contains ready DQL orderBy statement that later will be joined together
+        $expressionManager = new ExpressionManager($entityFqcn, $this->em);
+        $dqlCompiler = new DqlCompiler($expressionManager);
+        $binder = new DoctrineQueryBuilderParametersBinder($qb);
+
+        $orderStmts = array(); // contains ready DQL orderBy statement that later will be joined together
         if (isset($params['sort'])) {
             foreach ($params['sort'] as $entry) { // sanitizing and filtering
                 if (!isset($entry['property']) || !isset($entry['direction'])) {
@@ -262,15 +265,33 @@ class ExtjsQueryBuilder
                     $this->resolveExpression($entityFqcn, $propertyName, $sortingFieldResolver, $expressionManager)
                 );
 
-                $orderStms[] = $alias . ' ' . $direction;
+                $orderStmts[] = $alias . ' ' . $direction;
             }
         }
 
+        /* @var Expression[] $fetchExpressions */
+        $fetchExpressions = array();
         if (isset($params['fetch']) && is_array($params['fetch'])) {
-
+            foreach ($params['fetch'] as $alias=>$expr) {
+                $fetchExpressions[] = new Expression($expr, $alias);
+            }
         }
 
-        $qb->add('select', 'e');
+        if (count($fetchExpressions) == 0) {
+            $qb->add('select', 'e');
+        } else {
+            $qb->add('select', 'e');
+            foreach ($fetchExpressions as $expression) {
+                if ($expression->getFunction() || $expression->getAlias()) {
+                    $qb->add('select', $dqlCompiler->compile($expression, $binder), true);
+                } else {
+                    if (!$expressionManager->isAssociation($expression->getExpression())) {
+                        $qb->add('select', $expressionManager->getDqlPropertyName($expression->getExpression()), true);
+                    }
+                }
+            }
+        }
+
         $qb->add('from', $entityFqcn . ' e');
 
         if (isset($params['start'])) {
@@ -285,8 +306,6 @@ class ExtjsQueryBuilder
         }
 
         if (isset($params['filter'])) {
-            $binder = new DoctrineQueryBuilderParametersBinder($qb);
-
             $andExpr = $qb->expr()->andX();
 
             foreach (new Filters($params['filter']) as $filter) {
@@ -308,19 +327,28 @@ class ExtjsQueryBuilder
 
             if ($andExpr->count() > 0) {
                 $qb->where($andExpr);
-                $binder->injectParameters();
             }
         }
 
         if (isset($params['fetch']) && is_array($params['fetch'])) {
-            $expressionManager->injectFetchSelects($qb, $params['fetch']);
+            $rawFetchExpressions = array();
+            foreach ($fetchExpressions as $expression) {
+                $isFetchOnly = !$expression->getAlias() && !$expression->getFunction();
+                if ($isFetchOnly && $expressionManager->isAssociation($expression->getExpression())) {
+                    $rawFetchExpressions[] = $expression->getExpression();
+                }
+            }
+
+            $expressionManager->injectFetchSelects($qb, $rawFetchExpressions);
         } else {
             $expressionManager->injectJoins($qb, false);
         }
 
-        if (count($orderStms) > 0) {
-            $qb->add('orderBy', implode(', ', $orderStms));
+        if (count($orderStmts) > 0) {
+            $qb->add('orderBy', implode(', ', $orderStmts));
         }
+
+        $binder->injectParameters();
 
         return $qb;
     }

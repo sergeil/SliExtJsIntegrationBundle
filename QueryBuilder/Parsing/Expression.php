@@ -57,6 +57,13 @@ class Expression
         return $this->expression;
     }
 
+    public function isReference()
+    {
+        $exp = $this->getExpression();
+
+        return ':' == $exp{0};
+    }
+
     /**
      * @return string|false
      */

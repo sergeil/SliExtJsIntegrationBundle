@@ -16,7 +16,7 @@ require_once __DIR__.'/../DummyEntities.php';
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class ExpressionManagerTest  extends AbstractDatabaseTestCase
+class ExpressionManagerTest extends AbstractDatabaseTestCase
 {
     /* @var ExpressionManager */
     private $exprMgr;

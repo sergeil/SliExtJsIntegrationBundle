@@ -331,16 +331,11 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuilderQueryWithComplexFetch()
     {
-        $q = self::$em->createQuery(sprintf('SELECT CONCAT(e.firstname, e.lastname) as fullname FROM %s e', DummyUser::clazz()));
-//        $q->setParameter(0, 'j%');
-        $q->getResult();
-        return;
-
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
                 array(
                     array('property' => 'lastname', 'value' => 'eq:doe'),
-                    array('property' => 'fullname', 'value' => 'like:jane%')
+//                    array('property' => 'fullname', 'value' => 'like:jane%')
                 )
             ),
             'fetch' => array(
@@ -358,24 +353,27 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
                         )
                     )
                 )
+            ),
+            'sort' => array(
+                array('property' => 'id', 'direction' => 'ASC')
             )
         ));
 
         $users = $qb->getQuery()->getResult();
 
-        $this->assertEquals(1, count($users));
+        $this->assertEquals(2, count($users));
         $this->assertArrayHasKey('firstname', $users[0]);
         $this->assertArrayHasKey('lastname', $users[0]);
         $this->assertArrayHasKey('fullname', $users[0]);
-        $this->assertEquals('jane', $users[0]['firstname']);
+        $this->assertEquals('john', $users[0]['firstname']);
         $this->assertEquals('doe', $users[0]['lastname']);
-        $this->assertEquals('jane doe', $users[0]['fullname']);
+        $this->assertEquals('john doe', $users[0]['fullname']);
     }
 
 //    public function testBuildQueryWithGroupBy()
 //    {
 //        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
-//            'groupby' => array(
+//            'groupBy' => array(
 //                'address.zip'
 //            )
 //        ));

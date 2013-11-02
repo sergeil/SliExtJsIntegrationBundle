@@ -13,6 +13,8 @@ use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 use Sli\ExtJsIntegrationBundle\Tests\Group;
 
+require_once __DIR__.'/DummyEntities.php';
+
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
