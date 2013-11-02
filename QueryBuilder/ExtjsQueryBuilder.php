@@ -8,6 +8,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\FilterInterface;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filters;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrderExpression;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrFilter;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\ChainSortingFieldResolver;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
@@ -245,35 +246,25 @@ class ExtjsQueryBuilder
         $orderStmts = array(); // contains ready DQL orderBy statement that later will be joined together
         if (isset($params['sort'])) {
             foreach ($params['sort'] as $entry) { // sanitizing and filtering
-                if (!isset($entry['property']) || !isset($entry['direction'])) {
+                $orderExpression = new OrderExpression($entry);
+
+                if (!$orderExpression->isValid() || !$expressionManager->isValidExpression($orderExpression->getProperty())) {
                     continue;
                 }
 
-                list($propertyName, $direction) = array_values($entry);
-                if (!$expressionManager->isValidExpression($propertyName)) {
-                    continue;
-                }
-
-                $propertyName = $this->sanitizeDqlFieldName($propertyName);
-                $direction = strtoupper($direction);
-
-                if (!in_array($direction, array('ASC', 'DESC'))) {
-                    continue;
-                }
-
-                $alias = $expressionManager->getDqlPropertyName(
-                    $this->resolveExpression($entityFqcn, $propertyName, $sortingFieldResolver, $expressionManager)
+                $statement = $expressionManager->getDqlPropertyName(
+                    $this->resolveExpression($entityFqcn, $orderExpression->getProperty(), $sortingFieldResolver, $expressionManager)
                 );
 
-                $orderStmts[] = $alias . ' ' . $direction;
+                $orderStmts[] = $statement . ' ' . strtoupper($orderExpression->getDirection());
             }
         }
 
         /* @var Expression[] $fetchExpressions */
         $fetchExpressions = array();
         if (isset($params['fetch']) && is_array($params['fetch'])) {
-            foreach ($params['fetch'] as $alias=>$expr) {
-                $fetchExpressions[] = new Expression($expr, $alias);
+            foreach ($params['fetch'] as $statement=>$expr) {
+                $fetchExpressions[] = new Expression($expr, $statement);
             }
         }
 
