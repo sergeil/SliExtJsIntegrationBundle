@@ -73,11 +73,6 @@ class ExtjsQueryBuilder
         $this->sortingFieldResolver = $sortingFieldResolver;
     }
 
-    protected function sanitizeDqlFieldName($name)
-    {
-        return preg_replace('/^[^a-zA-Z0-9_]*$/', '', $name);
-    }
-
     /**
      * @param array $params
      * @return \Doctrine\ORM\Query
@@ -271,7 +266,7 @@ class ExtjsQueryBuilder
         if (count($fetchExpressions) == 0) {
             $qb->add('select', 'e');
         } else {
-            $qb->add('select', 'e');
+            $qb->add('select', 'e'); // it should not be added if there's no * expression
             foreach ($fetchExpressions as $expression) {
                 if ($expression->getFunction() || $expression->getAlias()) {
                     $qb->add('select', $dqlCompiler->compile($expression, $binder), true);
@@ -322,15 +317,7 @@ class ExtjsQueryBuilder
         }
 
         if (isset($params['fetch']) && is_array($params['fetch'])) {
-            $rawFetchExpressions = array();
-            foreach ($fetchExpressions as $expression) {
-                $isFetchOnly = !$expression->getAlias() && !$expression->getFunction();
-                if ($isFetchOnly && $expressionManager->isAssociation($expression->getExpression())) {
-                    $rawFetchExpressions[] = $expression->getExpression();
-                }
-            }
-
-            $expressionManager->injectFetchSelects($qb, $rawFetchExpressions);
+            $expressionManager->injectFetchSelects($qb, $fetchExpressions);
         } else {
             $expressionManager->injectJoins($qb, false);
         }

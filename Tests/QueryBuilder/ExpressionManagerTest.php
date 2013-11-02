@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
 use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
@@ -137,7 +138,7 @@ class ExpressionManagerTest extends AbstractDatabaseTestCase
         $qb->select('e')
             ->from(DummyUser::clazz(), 'e');
 
-        $this->exprMgr->injectFetchSelects($qb, array('address.country'));
+        $this->exprMgr->injectFetchSelects($qb, array(new Expression('address.country')));
 
         $dqlParts = $qb->getDQLParts();
 

@@ -4,6 +4,7 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
@@ -193,6 +194,10 @@ class ExpressionManager
         return $result;
     }
 
+    /**
+     * @param QueryBuilder $qb
+     * @param array $expressions
+     */
     private function doInjectJoins(QueryBuilder $qb, array $expressions)
     {
         foreach (array_values($expressions) as $i=>$expression) {
@@ -218,7 +223,12 @@ class ExpressionManager
     public function injectJoins(QueryBuilder $qb, $useFetchJoins = true)
     {
         if ($useFetchJoins) {
-            $this->injectFetchSelects($qb, array_values($this->allocatedAliases));
+            $expressions = array();
+            foreach ($this->allocatedAliases as $rawExpression) {
+                $expressions[] = new Expression($rawExpression);
+            }
+
+            $this->injectFetchSelects($qb, $expressions);
         } else {
             $this->doInjectJoins($qb, $this->allocatedAliases);
         }
@@ -229,14 +239,21 @@ class ExpressionManager
      * use this method or injectJoins() but not both of them at the same time.
      *
      * @param QueryBuilder $qb
-     * @param array $expressions
+     * @param Expression[] $expressions  All expressions which were provided in "fetch". The method will filter
+     *                                   "select" fetches by itself
      */
     public function injectFetchSelects(QueryBuilder $qb, array $expressions)
     {
         $expandedExpressions = array();
         foreach ($expressions as $expression) {
-            $expandedExpressions = array_merge($expandedExpressions, $this->expandExpression($expression));
+            $isFetchOnly = !$expression->getAlias() && !$expression->getFunction();
+
+            // we need to have only "fetch" expressions
+            if ($isFetchOnly && $this->isAssociation($expression->getExpression())) {
+                $expandedExpressions = array_merge($expandedExpressions, $this->expandExpression($expression->getExpression()));
+            }
         }
+
         $expandedExpressions = array_values(array_unique($expandedExpressions));
 
         $selects = array();
