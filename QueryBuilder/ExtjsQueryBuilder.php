@@ -255,25 +255,35 @@ class ExtjsQueryBuilder
             }
         }
 
+        $hasFetch = isset($params['fetch']) && is_array($params['fetch']) && count($params['fetch']) > 0;
         /* @var Expression[] $fetchExpressions */
         $fetchExpressions = array();
-        if (isset($params['fetch']) && is_array($params['fetch'])) {
+        if ($hasFetch) {
             foreach ($params['fetch'] as $statement=>$expr) {
                 $fetchExpressions[] = new Expression($expr, $statement);
             }
         }
 
-        if (count($fetchExpressions) == 0) {
+        $hasGroupBy = isset($params['groupBy']) && is_array($params['groupBy']) && count($params['groupBy']) > 0;
+        /* @var Expression[] $groupByExpressions */
+        $groupByExpressions = array();
+        if ($hasGroupBy) {
+            foreach ($params['groupBy'] as $expr) {
+                $groupByExpressions[] = new Expression($expr);
+            }
+        }
+
+        $addRootFetch = (isset($params['fetchRoot']) && true == $params['fetchRoot']) || !isset($params['fetchRoot']);
+        if ($addRootFetch) {
             $qb->add('select', 'e');
-        } else {
-            $qb->add('select', 'e'); // it should not be added if there's no * expression
-            foreach ($fetchExpressions as $expression) {
-                if ($expression->getFunction() || $expression->getAlias()) {
-                    $qb->add('select', $dqlCompiler->compile($expression, $binder), true);
-                } else {
-                    if (!$expressionManager->isAssociation($expression->getExpression())) {
-                        $qb->add('select', $expressionManager->getDqlPropertyName($expression->getExpression()), true);
-                    }
+        }
+
+        foreach ($fetchExpressions as $expression) {
+            if ($expression->getFunction() || $expression->getAlias()) {
+                $qb->add('select', $dqlCompiler->compile($expression, $binder), true);
+            } else {
+                if (!$expressionManager->isAssociation($expression->getExpression())) {
+                    $qb->add('select', $expressionManager->getDqlPropertyName($expression->getExpression()), true);
                 }
             }
         }
@@ -316,9 +326,17 @@ class ExtjsQueryBuilder
             }
         }
 
-        if (isset($params['fetch']) && is_array($params['fetch'])) {
+        if ($hasFetch) {
             $expressionManager->injectFetchSelects($qb, $fetchExpressions);
         } else {
+            $expressionManager->injectJoins($qb, false);
+        }
+
+        if ($hasGroupBy) {
+            foreach ($groupByExpressions as $expr) {
+                $qb->addGroupBy($expressionManager->getDqlPropertyName($expr->getExpression()));
+            }
+
             $expressionManager->injectJoins($qb, false);
         }
 

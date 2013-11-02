@@ -370,19 +370,44 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals('john doe', $users[0]['fullname']);
     }
 
-//    public function testBuildQueryWithGroupBy()
-//    {
-//        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
-//            'groupBy' => array(
-//                'address.zip'
-//            )
-//        ));
-//
-//        echo $qb->getDQL();
-//
-//        /* @var DummyUser[] $users */
-//        $users = $qb->getQuery()->getResult();
-//
-//        $this->assertEquals(2, count($users));
-//    }
+    public function testBuildQueryWithGroupBy()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'fetch' => array(
+                'total' => array(
+                    'function' => 'COUNT',
+                    'args' => array(
+                        ':id'
+                    )
+                )
+            ),
+            'groupBy' => array(
+                'address.zip'
+            ),
+            'fetchRoot' => false
+        ));
+
+        $this->assertEquals(1, count($qb->getDQLPart('select')));
+
+        /* @var DummyUser[] $users */
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertEquals(3, count($users));
+    }
+
+    public function testBuildQueryWithComplexSorting()
+    {
+        return;
+        // TODO add supporting for things like that
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'orderBy' => array(
+                array(
+                    'function' => 'CONCAT',
+                    'args' => array(
+                        ':firstname', ':lastname'
+                    )
+                )
+            )
+        ));
+    }
 }
