@@ -328,4 +328,56 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals('john', $users[0]->firstname);
         $this->assertEquals('pupkin', $users[1]->lastname);
     }
+
+    public function testBuilderQueryWithComplexFetch()
+    {
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+            'filter' => array(
+                array(
+                    array('property' => 'lastname', 'value' => 'eq:doe'),
+                    array('property' => 'fullname', 'value' => 'like:jane%') // will result in "HAVING" expression
+                )
+            ),
+            'fetch' => array(
+                'firstname',
+                'lastname',
+                'fullname' => array(
+                    'function' => 'CONCAT',
+                    'args' => array(
+                        ':firstname',
+                        array(
+                            'function' => 'CONCAT',
+                            'args' => array(' ',':lastname')
+                        )
+                    )
+                )
+            )
+        ));
+
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertEquals(1, count($users));
+        $this->assertArrayHasKey('firstname', $users[0]);
+        $this->assertArrayHasKey('lastname', $users[0]);
+        $this->assertArrayHasKey('fullname', $users[0]);
+        $this->assertEquals('jane', $users[0]['firstname']);
+        $this->assertEquals('doe', $users[0]['lastname']);
+        $this->assertEquals('jane doe', $users[0]['fullname']);
+    }
+
+//    public function testBuildQueryWithGroupBy()
+//    {
+//        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
+//            'groupby' => array(
+//                'address.zip'
+//            )
+//        ));
+//
+//        echo $qb->getDQL();
+//
+//        /* @var DummyUser[] $users */
+//        $users = $qb->getQuery()->getResult();
+//
+//        $this->assertEquals(2, count($users));
+//    }
 }
