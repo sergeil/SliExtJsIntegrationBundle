@@ -395,9 +395,15 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(3, count($users));
     }
 
+    public function testBuildQueryWithOrderByContainingFunctionCall()
+    {
+        $this->markTestIncomplete();
+    }
+
     public function testBuildQueryWithComplexSorting()
     {
-        return;
+        $this->markTestIncomplete();
+
         // TODO add supporting for things like that
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'orderBy' => array(

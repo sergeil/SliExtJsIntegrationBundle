@@ -259,8 +259,8 @@ class ExtjsQueryBuilder
         /* @var Expression[] $fetchExpressions */
         $fetchExpressions = array();
         if ($hasFetch) {
-            foreach ($params['fetch'] as $statement=>$expr) {
-                $fetchExpressions[] = new Expression($expr, $statement);
+            foreach ($params['fetch'] as $statement=>$groupExpr) {
+                $fetchExpressions[] = new Expression($groupExpr, $statement);
             }
         }
 
@@ -268,8 +268,8 @@ class ExtjsQueryBuilder
         /* @var Expression[] $groupByExpressions */
         $groupByExpressions = array();
         if ($hasGroupBy) {
-            foreach ($params['groupBy'] as $expr) {
-                $groupByExpressions[] = new Expression($expr);
+            foreach ($params['groupBy'] as $groupExpr) {
+                $groupByExpressions[] = new Expression($groupExpr);
             }
         }
 
@@ -333,8 +333,35 @@ class ExtjsQueryBuilder
         }
 
         if ($hasGroupBy) {
-            foreach ($groupByExpressions as $expr) {
-                $qb->addGroupBy($expressionManager->getDqlPropertyName($expr->getExpression()));
+            foreach ($groupByExpressions as $groupExpr) {
+                if ($groupExpr->getFunction()) {
+                    $qb->addGroupBy($dqlCompiler->compile($groupExpr, $binder));
+                } else {
+                    $dqlExpression = null;
+                    if ($expressionManager->isValidExpression($groupExpr->getExpression())) {
+                        $dqlExpression = $expressionManager->getDqlPropertyName($groupExpr->getExpression());
+                    } else {
+                        // we need to have something like this due to a limitation imposed by DQL. Basically,
+                        // we cannot write a query which would look akin to this one:
+                        // SELECT COUNT(e.id), DAY(e.createdAt) FROM FooEntity e GROUP BY DAY(e.createdAt)
+                        // If you try to use a function call in a GROUP BY clause an exception will be thrown.
+                        // To workaround this problem we need to introduce an alias, for example:
+                        // SELECT COUNT(e.id), DAY(e.createdAt) AS datDay FROM FooEntity e GROUP BY datDay
+                        foreach ($fetchExpressions as $fetchExpr) {
+                            if ($groupExpr->getExpression() == $fetchExpr->getAlias()) {
+                                $dqlExpression = $fetchExpr->getAlias();
+                            }
+                        }
+                    }
+
+                    if (!$dqlExpression) {
+                        throw new \RuntimeException(sprintf(
+                            'Unable to resolve grouping expression "%s" for entity', $groupExpr->getExpression(), $entityFqcn
+                        ));
+                    }
+
+                    $qb->addGroupBy($dqlExpression);
+                }
             }
 
             $expressionManager->injectJoins($qb, false);
