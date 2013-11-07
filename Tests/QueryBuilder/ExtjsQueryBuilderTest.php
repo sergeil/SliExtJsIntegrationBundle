@@ -395,18 +395,60 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(3, count($users));
     }
 
-    public function testBuildQueryWithOrderByContainingFunctionCall()
+    public function testBuildQueryWithOrderByAggregateColumnResult()
     {
-        $this->markTestIncomplete();
+        $baseParams = array(
+            'fetchRoot' => false,
+            'fetch' => array(
+                'how_many' => array(
+                    'function' => 'COUNT',
+                    'args' => array(':id')
+                ),
+                'lastname'
+            ),
+            'groupBy' => array(
+                'lastname'
+            )
+        );
+
+        $ascParams = array_merge($baseParams, array(
+            'sort' => array(
+                array(
+                    'property' => 'how_many',
+                    'direction' => 'ASC'
+                )
+            )
+        ));
+
+        $descParams = array_merge($baseParams, array(
+            'sort' => array(
+                array(
+                    'property' => 'how_many',
+                    'direction' => 'DESC'
+                )
+            )
+        ));
+
+        $ascResult = self::$builder->buildQueryBuilder(DummyUser::clazz(), $ascParams)->getQuery()->getResult();
+
+        $this->assertEquals(2, count($ascResult));
+        $this->assertEquals(1, $ascResult[0]['how_many']);
+        $this->assertEquals(2, $ascResult[1]['how_many']);
+
+        $descResult = self::$builder->buildQueryBuilder(DummyUser::clazz(), $descParams)->getQuery()->getResult();
+
+        $this->assertEquals(2, count($descResult));
+        $this->assertEquals(2, $descResult[0]['how_many']);
+        $this->assertEquals(1, $descResult[1]['how_many']);
     }
 
-    public function testBuildQueryWithComplexSorting()
+    public function testBuildQueryWithSortingContainingFunctionCall()
     {
         $this->markTestIncomplete();
 
         // TODO add supporting for things like that
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
-            'orderBy' => array(
+            'sort' => array(
                 array(
                     'function' => 'CONCAT',
                     'args' => array(

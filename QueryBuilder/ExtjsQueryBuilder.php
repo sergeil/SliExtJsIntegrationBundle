@@ -238,29 +238,43 @@ class ExtjsQueryBuilder
         $dqlCompiler = new DqlCompiler($expressionManager);
         $binder = new DoctrineQueryBuilderParametersBinder($qb);
 
-        $orderStmts = array(); // contains ready DQL orderBy statement that later will be joined together
-        if (isset($params['sort'])) {
-            foreach ($params['sort'] as $entry) { // sanitizing and filtering
-                $orderExpression = new OrderExpression($entry);
-
-                if (!$orderExpression->isValid() || !$expressionManager->isValidExpression($orderExpression->getProperty())) {
-                    continue;
-                }
-
-                $statement = $expressionManager->getDqlPropertyName(
-                    $this->resolveExpression($entityFqcn, $orderExpression->getProperty(), $sortingFieldResolver, $expressionManager)
-                );
-
-                $orderStmts[] = $statement . ' ' . strtoupper($orderExpression->getDirection());
-            }
-        }
-
         $hasFetch = isset($params['fetch']) && is_array($params['fetch']) && count($params['fetch']) > 0;
         /* @var Expression[] $fetchExpressions */
         $fetchExpressions = array();
         if ($hasFetch) {
             foreach ($params['fetch'] as $statement=>$groupExpr) {
                 $fetchExpressions[] = new Expression($groupExpr, $statement);
+            }
+        }
+
+        $orderStmts = array(); // contains ready DQL orderBy statement that later will be joined together
+        if (isset($params['sort'])) {
+            foreach ($params['sort'] as $entry) { // sanitizing and filtering
+                $orderExpression = new OrderExpression($entry);
+
+                if (!$orderExpression->isValid()) {
+                    continue;
+                }
+
+                $statement = null;
+
+                // if expression cannot be directly resolved again the model we will check
+                // if there's an alias introduced in "fetch" and then allow to use it
+                if (!$expressionManager->isValidExpression($orderExpression->getProperty())
+                    && $hasFetch && isset($params['fetch'][$orderExpression->getProperty()])) {
+
+                    $statement = $orderExpression->getProperty();
+                } else if ($expressionManager->isValidExpression($orderExpression->getProperty())) {
+                    $statement = $expressionManager->getDqlPropertyName(
+                        $this->resolveExpression($entityFqcn, $orderExpression->getProperty(), $sortingFieldResolver, $expressionManager)
+                    );
+                }
+
+                if (null === $statement) {
+                    continue;
+                }
+
+                $orderStmts[] = $statement . ' ' . strtoupper($orderExpression->getDirection());
             }
         }
 
@@ -356,7 +370,7 @@ class ExtjsQueryBuilder
 
                     if (!$dqlExpression) {
                         throw new \RuntimeException(sprintf(
-                            'Unable to resolve grouping expression "%s" for entity', $groupExpr->getExpression(), $entityFqcn
+                            'Unable to resolve grouping expression "%s" for entity %s', $groupExpr->getExpression(), $entityFqcn
                         ));
                     }
 
