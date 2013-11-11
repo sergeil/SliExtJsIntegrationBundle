@@ -8,9 +8,11 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Symfony\Component\HttpKernel\Kernel;
 
+SliExtJsIntegrationBundle::loadAnnotations();
+
 class SliExtJsIntegrationBundle extends Bundle
 {
-    public function boot()
+    static public function loadAnnotations()
     {
         $reflClass = new \ReflectionClass(__CLASS__);
         $path = dirname($reflClass->getFileName());
