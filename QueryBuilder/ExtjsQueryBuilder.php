@@ -266,6 +266,10 @@ class ExtjsQueryBuilder
             }
         }
 
+        if (isset($params['fetch']) && is_array($params['fetch'])) {
+
+        }
+
         $qb->add('select', 'e');
         $qb->add('from', $entityFqcn . ' e');
 

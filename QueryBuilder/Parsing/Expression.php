@@ -5,21 +5,19 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */ 
-class FetchExpression 
+class Expression
 {
     private $alias = false;
     private $function = false;
     private $functionArgs = array();
     private $expression;
 
-    public function __construct($alias, $expression)
+    /**
+     * @param string|array $expression
+     * @param null $alias  Alias should only be provided when expression is used in SELECT
+     */
+    public function __construct($expression, $alias = null)
     {
-        if (   is_string($alias) && strlen($alias) > 1
-            && preg_match('/^\w+$/', $alias{0}) && preg_match('/^[\w0-9_]+$/', $alias)) {
-
-            $this->alias = $alias;
-        }
-
         if (is_array($expression) && isset($expression['function']) && strlen($expression['function']) > 0) {
             $this->validateFunctionName($expression['function']);
             $this->function = $expression['function'];
@@ -27,7 +25,7 @@ class FetchExpression
             if (isset($expression['args']) && is_array($expression['args'])) {
                 foreach ($expression['args'] as $arg) {
                     if (is_array($arg)) {
-                        $this->functionArgs[] = new self(null, $arg);
+                        $this->functionArgs[] = new self($arg);
                     } else {
                         $this->functionArgs[] = $arg;
                     }
@@ -36,6 +34,12 @@ class FetchExpression
         }
 
         $this->expression = $expression;
+
+        if (   is_string($alias) && strlen($alias) > 1
+            && preg_match('/^\w+$/', $alias{0}) && preg_match('/^[\w0-9_]+$/', $alias)) {
+
+            $this->alias = $alias;
+        }
     }
 
     private function validateFunctionName($functionName)

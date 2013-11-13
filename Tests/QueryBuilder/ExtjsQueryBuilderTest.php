@@ -331,11 +331,16 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuilderQueryWithComplexFetch()
     {
+        $q = self::$em->createQuery(sprintf('SELECT CONCAT(e.firstname, e.lastname) as fullname FROM %s e', DummyUser::clazz()));
+//        $q->setParameter(0, 'j%');
+        $q->getResult();
+        return;
+
         $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
                 array(
                     array('property' => 'lastname', 'value' => 'eq:doe'),
-                    array('property' => 'fullname', 'value' => 'like:jane%') // will result in "HAVING" expression
+                    array('property' => 'fullname', 'value' => 'like:jane%')
                 )
             ),
             'fetch' => array(
@@ -347,7 +352,9 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
                         ':firstname',
                         array(
                             'function' => 'CONCAT',
-                            'args' => array(' ',':lastname')
+                            'args' => array(
+                                ' ', ':lastname'
+                            )
                         )
                     )
                 )

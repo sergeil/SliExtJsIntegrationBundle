@@ -157,10 +157,10 @@ class ExpressionManager
     /**
      * @throws \RuntimeException
      *
-     * @param string $expression  Last segment of expression must not be a relation
+     * @param string $expression
      *
      * @return string For a given $expression, will return a correct variable name with alias that you
-     *                can you in your DQL
+     *                can use in your DQL query
      */
     public function getDqlPropertyName($expression)
     {
@@ -169,6 +169,7 @@ class ExpressionManager
         if (strpos($expression, '.') !== false) { // associative expression
             $parsedExpression = explode('.', $expression);
             $propertyName = array_pop($parsedExpression);
+
             return $this->allocateAlias(implode('.', $parsedExpression)) . '.' . $propertyName;
         } else {
             return $this->getRootAlias() . '.' . $expression;

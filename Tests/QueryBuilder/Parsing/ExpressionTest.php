@@ -1,16 +1,17 @@
 <?php
 
 namespace Sli\ExtJsIntegrationBundle\Tests\Service\Parsing;
-use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\FetchExpression;
+
+use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */ 
-class FetchExpressionTest extends \PHPUnit_Framework_TestCase
+class ExpressionTest extends \PHPUnit_Framework_TestCase
 {
     public function testSimpleExpressionWithoutAlias()
     {
-        $expr = new FetchExpression(0, 'firstname');
+        $expr = new Expression('firstname');
 
         $this->assertEquals('firstname', $expr->getExpression());
         $this->assertFalse($expr->getAlias());
@@ -19,7 +20,7 @@ class FetchExpressionTest extends \PHPUnit_Framework_TestCase
 
     public function testSimpleExpressionWithAlias()
     {
-        $expr = new FetchExpression('fn', 'firstname');
+        $expr = new Expression('firstname', 'fn');
 
         $this->assertEquals('firstname', $expr->getExpression());
         $this->assertEquals('fn', $expr->getAlias());
@@ -38,7 +39,7 @@ class FetchExpressionTest extends \PHPUnit_Framework_TestCase
                 )
             )
         );
-        $expr = new FetchExpression('fullname', $rawExpr);
+        $expr = new Expression($rawExpr, 'fullname');
 
         $this->assertEquals('fullname', $expr->getAlias());
         $this->assertSame($rawExpr, $expr->getExpression());
@@ -47,11 +48,13 @@ class FetchExpressionTest extends \PHPUnit_Framework_TestCase
         $args1 = $expr->getFunctionArgs();
         $this->assertEquals(2, count($args1));
         $this->assertEquals(':firstname', $args1[0]);
-        $this->assertInstanceOf(FetchExpression::clazz(), $args1[1]);
-        /* @var FetchExpression $fetchSubArg */
+        $this->assertInstanceOf(Expression::clazz(), $args1[1]);
+        /* @var Expression $fetchSubArg */
         $fetchSubArg = $args1[1];
         $this->assertFalse($fetchSubArg->getAlias());
         $args2 = $fetchSubArg->getFunctionArgs();
+        $this->assertTrue(is_array($args2));
+        $this->assertEquals(2, count($args2));
         $this->assertEquals(' ', $args2[0]);
         $this->assertEquals(':lastname', $args2[1]);
     }
@@ -61,12 +64,12 @@ class FetchExpressionTest extends \PHPUnit_Framework_TestCase
      */
     public function testHowWellFunctionNameIsValidated()
     {
-        new FetchExpression(null, array('function' => '; SELECT'));
+        new Expression(array('function' => '; SELECT'));
     }
 
     public function testSanitizeAlias()
     {
-        $expr = new FetchExpression('; DELETE FROM xxx', 'fullname');
+        $expr = new Expression('foo', '; DELETE FROM xxx', 'fullname');
 
         $this->assertFalse($expr->getAlias());
     }
