@@ -77,7 +77,15 @@ class EntityDataMapperService
         return $p[$keyName];
     }
 
-    public function convertDate($clientValue)
+    /**
+     * @throws \RuntimeException
+     *
+     * @param string $clientValue
+     * @param boolean $queryCompatibleMode
+     *
+     * @return null|string|\DateTime
+     */
+    public function convertDate($clientValue, $queryCompatibleMode = false)
     {
         if ($clientValue != '') {
             $format = $this->getPreferencesValue(PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT);
@@ -89,6 +97,15 @@ class EntityDataMapperService
                     "Unable to map a date, unable to transform date-value of '$rawClientValue' to '$format' format."
                 );
             }
+
+            if ($queryCompatibleMode) {
+                // querying won't work properly if query "date" type field by using instance of \DateTime object
+                // because the latter contains information about time which we don't really need for "date" fields
+                return $clientValue->format(
+                    $this->em->getConnection()->getDatabasePlatform()->getDateFormatString()
+                );
+            }
+
             return $clientValue;
         }
 
@@ -113,13 +130,21 @@ class EntityDataMapperService
         return null;
     }
 
-    public function convertValue($clientValue, $fieldType)
+    /**
+     * @param mixed $clientValue
+     * @param string $fieldType
+     * @param boolean $queryMode  Usually used internally by ExtjsQueryBuilder. If TRUE then a date will be returned
+     *                            in a format compatible with underlying database so it can be properly queried
+     *
+     * @return mixed
+     */
+    public function convertValue($clientValue, $fieldType, $queryMode = false)
     {
         switch ($fieldType) {
             case 'boolean':
                 return $this->convertBoolean($clientValue);
             case 'date':
-                return $this->convertDate($clientValue);
+                return $this->convertDate($clientValue, $queryMode);
             case 'datetime':
                 return $this->convertDateTime($clientValue);
         }
@@ -127,6 +152,11 @@ class EntityDataMapperService
         return $clientValue;
     }
 
+    /**
+     * @param string $clientValue
+     *
+     * @return bool
+     */
     public function convertBoolean($clientValue)
     {
         return 'on' === $clientValue || 1 == $clientValue || 'true' === $clientValue;

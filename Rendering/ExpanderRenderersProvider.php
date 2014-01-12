@@ -33,6 +33,7 @@ class ExpanderRenderersProvider implements RenderersProviderInterface
     public function has($id)
     {
         $items = $this->provider->getItems();
+
         return isset($items[$id]);
     }
 
@@ -42,6 +43,7 @@ class ExpanderRenderersProvider implements RenderersProviderInterface
     public function get($id)
     {
         $items = $this->provider->getItems();
+
         return isset($items[$id]) ? $items[$id] : null;
     }
 

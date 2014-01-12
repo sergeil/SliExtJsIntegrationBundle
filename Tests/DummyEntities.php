@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\Tests;
 
 use Doctrine\ORM\Mapping as Orm;
+use Sli\ExtJsIntegrationBundle\DataMapping\PreferencesAwareUserInterface;
 use Sli\ExtJsIntegrationBundle\Service\QueryOrder;
 use Doctrine\Common\Collections\ArrayCollection;
 
@@ -10,7 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  * @Orm\Entity
  * @Orm\Table(name="sli_extjsintegration_dummyuser")
  */
-class DummyUser
+class DummyUser implements PreferencesAwareUserInterface
 {
     /**
      * @Orm\Id
@@ -44,6 +45,16 @@ class DummyUser
      * @Orm\ManyToMany(targetEntity="Group", inversedBy="users")
      */
     public $groups;
+
+    /**
+     * @inheritDoc
+     */
+    public function getPreferences()
+    {
+        return array(
+            PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT => 'd.m.Y'
+        );
+    }
 
     public function __construct()
     {

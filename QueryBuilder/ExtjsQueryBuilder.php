@@ -86,7 +86,7 @@ class ExtjsQueryBuilder
     {
         $mapping = $expressionManager->getMapping($expression);
 
-        return $this->mapper->convertValue($value, $mapping['type']);
+        return $this->mapper->convertValue($value, $mapping['type'], true);
     }
 
     private function resolveExpression(

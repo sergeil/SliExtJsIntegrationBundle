@@ -123,8 +123,15 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $o2->number = 'ORDER-2';
         $o2->user = $users[1];
 
+        $hourPlus = new \DateTime('now');
+        $hourPlus = $hourPlus->modify('+1 hour');
+
+        $president = new President();
+        $president->since = $hourPlus;
+
         self::$em->persist($o1);
         self::$em->persist($o2);
+        self::$em->persist($president);
 
         self::$em->flush();
     }
@@ -137,11 +144,13 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $dummyCountryMetadata = self::$em->getClassMetadata(DummyCountry::clazz());
         $dummyCCMetadata = self::$em->getClassMetadata(CreditCard::clazz());
         $groupMetadata = self::$em->getClassMetadata(Group::clazz());
+        $presidentMetadata = self::$em->getClassMetadata(President::clazz());
 
         $st = new SchemaTool(self::$em);
         $st->dropSchema(array(
             $orderUserMetadata, $dummyUserMetadata, $dummyAddressMetadata,
-            $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata
+            $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata,
+            $presidentMetadata
         ));
     }
 }

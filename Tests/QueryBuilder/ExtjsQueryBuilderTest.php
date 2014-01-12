@@ -11,6 +11,7 @@ use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
 use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyOrder;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
+use Sli\ExtJsIntegrationBundle\Tests\President;
 
 require_once __DIR__.'/../DummyEntities.php';
 
@@ -440,6 +441,24 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
         $this->assertEquals(2, count($descResult));
         $this->assertEquals(2, $descResult[0]['how_many']);
         $this->assertEquals(1, $descResult[1]['how_many']);
+    }
+
+    public function testQueryingByDateField()
+    {
+        $this->markTestIncomplete();
+
+        $now = new \DateTime('now');
+
+        $result = self::$builder->buildQuery(President::clazz(), array(
+            'filter' => array(
+                array(
+                    'property' => 'since',
+                    'value' => 'gte:' . $now->format('d.m.Y')
+                )
+            )
+        ))->getResult();
+
+        $this->assertEquals(1, count($result));
     }
 
     public function testBuildQueryWithSortingContainingFunctionCall()
