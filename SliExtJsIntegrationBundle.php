@@ -36,7 +36,7 @@ class SliExtJsIntegrationBundle extends Bundle
             )
         );
 
-        $valueConverterProviders = new ExtensionPoint('sli.extjsintegration.complex_field_value_converters_provider');
+        $valueConverterProviders = new ExtensionPoint('sli.extjsintegration.complex_field_value_converters');
         $valueConverterProviders->setDescription('Allows to contribute custom value converters');
         $container->addCompilerPass($valueConverterProviders->createCompilerPass());
     }
