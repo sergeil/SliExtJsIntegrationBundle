@@ -5,7 +5,6 @@
     "homepage": "http://github.com/sergeil/SliExtJsIntegrationBundle",
     "type": "symfony-bundle",
     "license": "MIT",
-    "minimum-stability": "dev",
     "authors": [
         {
             "name": "Sergei Lissovski",
