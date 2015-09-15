@@ -1,3 +1,5 @@
+# This bundle is not longer maintained, only critical bugfixes will be applied, please use [SliDoctrineArrayQueryBuilderBundle](https://github.com/sergeil/SliDoctrineArrayQueryBuilderBundle) and [SliDoctrineEntityDataMapperBundle](https://github.com/sergeil/SliDoctrineEntityDataMapperBundle) instead.
+
 The bundle will contain some utility classes that prove useful when you use ExtJs library on the client-side.
 
 What's inside
