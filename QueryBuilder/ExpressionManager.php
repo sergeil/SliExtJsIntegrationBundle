@@ -209,9 +209,8 @@ class ExpressionManager
             } else if (count($parsedExpression) == 1) {
                 $qb->leftJoin($this->rootAlias . '.' . $parsedExpression[0], $alias);
             } else {
-                $previousAlias = array_keys($this->allocatedAliases);
-                $previousAlias = $previousAlias[$i-1];
-                $qb->leftJoin($previousAlias . '.' . $parsedExpression[count($parsedExpression)-1], $alias);
+                $parentAlias = $this->resolveExpressionToAlias(implode('.', array_slice($parsedExpression, 0, -1)));
+                $qb->leftJoin($parentAlias . '.' . end($parsedExpression), $alias);
             }
         }
     }
