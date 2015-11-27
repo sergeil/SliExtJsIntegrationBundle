@@ -477,4 +477,26 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
             )
         ));
     }
+
+    /**
+     * Thanks to Stas Chichkan for spotting this bug and providing a possible fix
+     * (https://github.com/sergeil/SliExtJsIntegrationBundle/pull/2).
+     *
+     * Fixed \Sli\DoctrineArrayQueryBuilderBundle\Querying\ExpressionManager::doInjectJoins
+     */
+    public function testMultipleJoinsInFilters()
+    {
+        $qb = self::$builder->buildQueryBuilder(User::clazz(), array(
+            'filter' => array(
+                // ExpressionManager was always using a 'previous allocated alias'
+                // instead of resolving what "entity" given expression really belongs
+                array('property' => 'address.country.id', 'value' => 'eq:1'),
+                array('property' => 'address.city.id', 'value' => 'eq:1')
+            )
+        ));
+
+        // before the fix Doctrine would throw an exception:
+        // [Semantical Error] ... Class Sli\...\DummyCountry has no association named city
+        $qb->getQuery()->getResult();
+    }
 }
