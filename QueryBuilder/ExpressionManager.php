@@ -207,6 +207,8 @@ class ExpressionManager
 
             if (0 == $i) {
                 $qb->leftJoin($this->rootAlias . '.' . $expression, $alias);
+            } else if (count($parsedExpression) == 1) {
+                $qb->leftJoin($this->rootAlias . '.' . $parsedExpression[0], $alias);
             } else {
                 $rootExpression = implode('.', array_slice($parsedExpression, 0, -1));
                 $propertyName = end($parsedExpression);

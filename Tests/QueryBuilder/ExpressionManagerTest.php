@@ -5,6 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\Tests\Service;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Query\Expr\Join;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 use Sli\ExtJsIntegrationBundle\Tests\AbstractDatabaseTestCase;
@@ -130,6 +131,30 @@ class ExpressionManagerTest extends AbstractDatabaseTestCase
         $this->assertEquals(2, count($dqlParts['join']['e']));
         $this->assertEquals(1, count($dqlParts['select']));
         $this->assertEquals($this->exprMgr->getRootAlias(), (string)$dqlParts['select'][0]);
+    }
+
+    /**
+     * @group MPFE-839
+     */
+    public function testInjectJoinsWithOneSegment()
+    {
+        $qb = self::$em->createQueryBuilder();
+        $qb->select('e')->from(DummyUser::clazz(), 'e');
+
+        $this->exprMgr->getDqlPropertyName('address.id');
+        $this->exprMgr->getDqlPropertyName('creditCard.number');
+        $this->exprMgr->injectJoins($qb, false);
+
+        $dqlParts = $qb->getDQLParts();
+
+        $this->assertEquals(2, count($dqlParts['join']['e']));
+        $this->assertEquals(1, count($dqlParts['select']));
+        $this->assertEquals($this->exprMgr->getRootAlias(), (string)$dqlParts['select'][0]);
+
+        /* @var Join $ccJoin */
+        $ccJoin = $dqlParts['join']['e'][1];
+
+        $this->assertNotEquals('.', substr($ccJoin->getJoin(), 0, 1));
     }
 
     public function testInjectFetchJoins()

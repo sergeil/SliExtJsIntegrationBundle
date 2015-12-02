@@ -486,7 +486,7 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
      */
     public function testMultipleJoinsInFilters()
     {
-        $qb = self::$builder->buildQueryBuilder(User::clazz(), array(
+        $qb = self::$builder->buildQueryBuilder(DummyUser::clazz(), array(
             'filter' => array(
                 // ExpressionManager was always using a 'previous allocated alias'
                 // instead of resolving what "entity" given expression really belongs
