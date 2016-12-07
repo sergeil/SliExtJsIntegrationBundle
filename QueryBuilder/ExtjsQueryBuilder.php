@@ -3,6 +3,7 @@
 namespace Sli\ExtJsIntegrationBundle\QueryBuilder;
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
@@ -16,6 +17,8 @@ use Sli\ExtJsIntegrationBundle\DataMapping\EntityDataMapperService;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
+use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 /**
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
@@ -62,13 +65,28 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
  */
 class ExtjsQueryBuilder
 {
-    private $em;
+    /**
+     * @since 1.1.0
+     *
+     * @var RegistryInterface
+     */
+    private $doctrineRegistry;
+
     private $mapper;
     private $sortingFieldResolver;
 
-    public function __construct(EntityManager $em, EntityDataMapperService $mapper, SortingFieldResolverInterface $sortingFieldResolver)
+    /**
+     * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
+     * method is subclasses then you need to change its signature as well. First argument used to accept instance
+     * of EntityManager now it has been changed to RegistryInterface.
+     *
+     * @param RegistryInterface $doctrineRegistry
+     * @param EntityDataMapperService $mapper
+     * @param SortingFieldResolverInterface $sortingFieldResolver
+     */
+    public function __construct(RegistryInterface $doctrineRegistry, EntityDataMapperService $mapper, SortingFieldResolverInterface $sortingFieldResolver)
     {
-        $this->em = $em;
+        $this->doctrineRegistry = $doctrineRegistry;
         $this->mapper = $mapper;
         $this->sortingFieldResolver = $sortingFieldResolver;
     }
@@ -232,9 +250,10 @@ class ExtjsQueryBuilder
         }
         $sortingFieldResolver->add($this->sortingFieldResolver);
 
-        $qb = $this->em->createQueryBuilder();
+        $em = $this->doctrineRegistry->getManagerForClass($entityFqcn);
+        $qb = $em->createQueryBuilder();
 
-        $expressionManager = new ExpressionManager($entityFqcn, $this->em);
+        $expressionManager = new ExpressionManager($entityFqcn, $em);
         $dqlCompiler = new DqlCompiler($expressionManager);
         $binder = new DoctrineQueryBuilderParametersBinder($qb);
 

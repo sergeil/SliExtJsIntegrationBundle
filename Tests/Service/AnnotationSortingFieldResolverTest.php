@@ -43,28 +43,34 @@ class FaaEntity
  */
 class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
 {
-    private function createEm($sourceEntity, $assocProperty, $targetEntity)
+    private function createDoctrineRegistry($sourceEntity, $assocProperty, $targetEntity)
     {
         $fooMetadata = $this->getMock('Doctrine\ORM\Mapping\ClassMetadata', array(), array(), '', false);
         $fooMetadata->expects($this->any())
-                    ->method('getAssociationMapping')
-                    ->with($assocProperty)
-                    ->will($this->returnValue(array('targetEntity' => $targetEntity)));
+            ->method('getAssociationMapping')
+            ->with($assocProperty)
+            ->will($this->returnValue(array('targetEntity' => $targetEntity)));
 
         $em = $this->getMock('Doctrine\ORM\EntityManager', array(), array(), '', false);
         $em->expects($this->any())
-           ->method('getClassMetadata')
-           ->with($sourceEntity)
-           ->will($this->returnValue($fooMetadata));
+            ->method('getClassMetadata')
+            ->with($sourceEntity)
+            ->will($this->returnValue($fooMetadata));
 
-        return $em;
+        $doctrineRegistry = $this->getMock('Symfony\Bridge\Doctrine\RegistryInterface');
+
+        $doctrineRegistry->expects($this->any())
+            ->method('getManagerForClass')
+            ->will($this->returnValue($em));
+
+        return $doctrineRegistry;
     }
 
     public function testResolve_definedOnRelatedEntity()
     {
         $source = 'Sli\ExtJsIntegrationBundle\Tests\Service\FooEntity';
 
-        $r = new AnnotationSortingFieldResolver($this->createEm($source, 'bar', 'Sli\ExtJsIntegrationBundle\Tests\Service\BarEntity'));
+        $r = new AnnotationSortingFieldResolver($this->createDoctrineRegistry($source, 'bar', 'Sli\ExtJsIntegrationBundle\Tests\Service\BarEntity'));
         $this->assertEquals('name', $r->resolve($source, 'bar'));
     }
 
@@ -72,7 +78,7 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
     {
         $source = 'Sli\ExtJsIntegrationBundle\Tests\Service\BarEntity';
 
-        $r = new AnnotationSortingFieldResolver($this->createEm($source, 'baz', 'Sli\ExtJsIntegrationBundle\Tests\Service\BazEntity'));
+        $r = new AnnotationSortingFieldResolver($this->createDoctrineRegistry($source, 'baz', 'Sli\ExtJsIntegrationBundle\Tests\Service\BazEntity'));
         $this->assertEquals('someField', $r->resolve($source, 'baz'));
     }
 
@@ -80,7 +86,7 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
     {
         $source = 'Sli\ExtJsIntegrationBundle\Tests\Service\BazEntity';
 
-        $r = new AnnotationSortingFieldResolver($this->createEm($source, 'faa', 'Sli\ExtJsIntegrationBundle\Tests\Service\FaaEntity'));
+        $r = new AnnotationSortingFieldResolver($this->createDoctrineRegistry($source, 'faa', 'Sli\ExtJsIntegrationBundle\Tests\Service\FaaEntity'));
         $this->assertEquals('id', $r->resolve($source, 'faa'));
     }
 
@@ -91,7 +97,7 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
     {
         $source = 'Sli\ExtJsIntegrationBundle\Tests\Service\BazEntity';
 
-        $r = new AnnotationSortingFieldResolver($this->createEm($source, 'faa', 'Sli\ExtJsIntegrationBundle\Tests\Service\FaaEntity'), 'blah');
+        $r = new AnnotationSortingFieldResolver($this->createDoctrineRegistry($source, 'faa', 'Sli\ExtJsIntegrationBundle\Tests\Service\FaaEntity'), 'blah');
         $r->resolve($source, 'faa');
     }
 }

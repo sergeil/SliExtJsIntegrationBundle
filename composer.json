@@ -19,7 +19,16 @@
         "symfony/framework-bundle": "~2.0"
     },
     "autoload": {
-        "psr-0": { "Sli\\ExtJsIntegrationBundle": "" }
+        "psr-4": {
+            "Sli\\ExtJsIntegrationBundle\\": ""
+        },
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
     },
-    "target-dir": "Sli/ExtJsIntegrationBundle"
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        }
+    }
 }

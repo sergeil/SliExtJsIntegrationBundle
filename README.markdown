@@ -19,7 +19,7 @@ Installation
    ```
    {
        "require": {
-           "sergeil/extjsintegration-bundle": "dev-master@dev"
+           "sergeil/extjsintegration-bundle": "~1.0"
        }
    }
    ```

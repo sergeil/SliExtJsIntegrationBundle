@@ -164,6 +164,13 @@ class DummyAddress
      */
     public $country;
 
+    /**
+     * @var DummyCity
+     *
+     * @Orm\ManyToOne(targetEntity="DummyCity", cascade={"PERSIST"})
+     */
+    public $city;
+
     static public function clazz()
     {
         return get_called_class();
@@ -192,6 +199,30 @@ class DummyCountry
      * @Orm\OneToOne(targetEntity="President")
      */
     public $president;
+
+    static public function clazz()
+    {
+        return get_called_class();
+    }
+}
+
+/**
+ * @Orm\Entity
+ * @Orm\Table(name="sli_doctrinearrayquerybuilder_dummycity")
+ */
+class DummyCity
+{
+    /**
+     * @Orm\Id
+     * @Orm\Column(type="integer")
+     * @Orm\GeneratedValue(strategy="AUTO")
+     */
+    public $id;
+
+    /**
+     * @Orm\Column
+     */
+    public $name;
 
     static public function clazz()
     {

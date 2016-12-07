@@ -2,6 +2,7 @@
 
 namespace Sli\ExtJsIntegrationBundle\Tests;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Mapping as Orm;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
@@ -12,6 +13,7 @@ use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 use Sli\ExtJsIntegrationBundle\Tests\Group;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 require_once __DIR__.'/DummyEntities.php';
 
@@ -29,14 +31,22 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
     /* @var \Symfony\Component\HttpKernel\Kernel $kernel */
     static protected $kernel;
 
+    protected function tearDown()
+    {
+        // overriding this method prevents kernel from shutting down, so our hacked annotation driver from
+        // setUpBeforeClass remains used
+    }
+
     static public function setUpBeforeClass()
     {
         /* @var \Symfony\Component\HttpKernel\Kernel $kernel */
         self::$kernel = static::createKernel();
         self::$kernel->boot();
-        /* @var \Doctrine\ORM\EntityManager $em */
-        $em = self::$kernel->getContainer()->get('doctrine.orm.entity_manager');
-        $em = clone $em;
+
+        /* @var RegistryInterface $doctrine */
+        $doctrine = self::$kernel->getContainer()->get('doctrine');
+
+        $em = $doctrine->getManager();
 
         self::$em = $em;
         self::$builder = self::$kernel->getContainer()->get('sli.extjsintegration.extjs_query_builder');
@@ -52,23 +62,21 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $reflInitMethod = $reflMetadataFactory->getMethod('initialize');
         $reflInitMethod->setAccessible(true);
         $reflInitMethod->invoke($metadataFactory);
+
+        // dynamically adding a namespace
         $reflDriverProp = $reflMetadataFactory->getProperty('driver');
         $reflDriverProp->setAccessible(true);
         /* @var \Doctrine\ORM\Mapping\Driver\DriverChain $driver */
         $driver = $reflDriverProp->getValue($metadataFactory);
         $driver->addDriver($annotationDriver, __NAMESPACE__);
 
-        // adding dummy data
+        // adding dummy data & updating database
 
-        $metadataFactory = self::$em->getMetadataFactory();
-
-        // updating database
         $st = new SchemaTool(self::$em);
 
         $classNames = array(
-            DummyUser::clazz(), DummyAddress::clazz(), DummyCountry::clazz(),
-            CreditCard::clazz(), Group::clazz(), DummyOrder::clazz(),
-            President::clazz()
+            DummyUser::clazz(), DummyAddress::clazz(), DummyCity::clazz(), DummyCountry::clazz(),
+            CreditCard::clazz(), Group::clazz(), DummyOrder::clazz(), President::clazz()
         );
         $meta = array();
         foreach ($classNames as $className) {
@@ -145,12 +153,15 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $dummyCCMetadata = self::$em->getClassMetadata(CreditCard::clazz());
         $groupMetadata = self::$em->getClassMetadata(Group::clazz());
         $presidentMetadata = self::$em->getClassMetadata(President::clazz());
+        $cityMetadata = self::$em->getClassMetadata(DummyCity::clazz());
 
         $st = new SchemaTool(self::$em);
         $st->dropSchema(array(
             $orderUserMetadata, $dummyUserMetadata, $dummyAddressMetadata,
             $dummyCountryMetadata, $dummyCCMetadata, $groupMetadata,
-            $presidentMetadata
+            $presidentMetadata, $cityMetadata
         ));
+
+        self::ensureKernelShutdown(); // we need to do this menually here because we have overridden "tearDown" method
     }
 }

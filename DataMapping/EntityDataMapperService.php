@@ -4,6 +4,8 @@ namespace Sli\ExtJsIntegrationBundle\DataMapping;
 
 use Doctrine\ORM\EntityManager;
 use Sli\ExpanderBundle\Ext\ContributorInterface;
+use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\Security\Core\SecurityContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
@@ -27,18 +29,35 @@ use Doctrine\Common\Collections\Collection;
  */
 class EntityDataMapperService
 {
-    private $em;
+    /**
+     * @since 1.1.0
+     *
+     * @var RegistryInterface
+     */
+    private $doctrineRegistry;
+
     private $sc;
     private $fm;
     private $paramsProvider;
     private $complexFiledValueConvertersProvider;
 
+    /**
+     * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
+     * method is subclasses then you need to change its signature as well. First argument used to accept instance
+     * of EntityManager now it has been changed to RegistryInterface.
+     *
+     * @param RegistryInterface $doctrineRegistry
+     * @param SecurityContext $sc
+     * @param JavaBeansObjectFieldsManager $fm
+     * @param MethodInvocationParametersProviderInterface $paramsProvider
+     * @param ContributorInterface $complexFieldValueConvertersProvider
+     */
     public function __construct(
-        EntityManager $em, SecurityContext $sc, JavaBeansObjectFieldsManager $fm,
+        RegistryInterface $doctrineRegistry, SecurityContext $sc, JavaBeansObjectFieldsManager $fm,
         MethodInvocationParametersProviderInterface $paramsProvider,
         ContributorInterface $complexFieldValueConvertersProvider)
     {
-        $this->em = $em;
+        $this->doctrineRegistry = $doctrineRegistry;
         $this->sc = $sc;
         $this->fm = $fm;
         $this->paramsProvider = $paramsProvider;
@@ -82,10 +101,11 @@ class EntityDataMapperService
      *
      * @param string $clientValue
      * @param boolean $queryCompatibleMode
+     * @param string $entityClass  For explanations what this argument does see "convertValue" method.
      *
      * @return null|string|\DateTime
      */
-    public function convertDate($clientValue, $queryCompatibleMode = false)
+    public function convertDate($clientValue, $queryCompatibleMode = false, $entityClass = null)
     {
         if ($clientValue != '') {
             $format = $this->getPreferencesValue(PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT);
@@ -99,10 +119,12 @@ class EntityDataMapperService
             }
 
             if ($queryCompatibleMode) {
+                $em = $entityClass ? $this->doctrineRegistry->getManagerForClass($entityClass) : $this->doctrineRegistry->getManager();
+
                 // querying won't work properly if query "date" type field by using instance of \DateTime object
                 // because the latter contains information about time which we don't really need for "date" fields
                 return $clientValue->format(
-                    $this->em->getConnection()->getDatabasePlatform()->getDateFormatString()
+                    $em->getConnection()->getDatabasePlatform()->getDateFormatString()
                 );
             }
 
@@ -135,16 +157,18 @@ class EntityDataMapperService
      * @param string $fieldType
      * @param boolean $queryMode  Usually used internally by ExtjsQueryBuilder. If TRUE then a date will be returned
      *                            in a format compatible with underlying database so it can be properly queried
+     * @param string $entityClass A FQCN of entity whose field you are mapping, if provided then it will be used
+     *                            to more accurately guess how field should be mapped.
      *
      * @return mixed
      */
-    public function convertValue($clientValue, $fieldType, $queryMode = false)
+    public function convertValue($clientValue, $fieldType, $queryMode = false, $entityClass = null)
     {
         switch ($fieldType) {
             case 'boolean':
                 return $this->convertBoolean($clientValue);
             case 'date':
-                return $this->convertDate($clientValue, $queryMode);
+                return $this->convertDate($clientValue, $queryMode, $entityClass);
             case 'datetime':
                 return $this->convertDateTime($clientValue);
         }
@@ -173,8 +197,10 @@ class EntityDataMapperService
      */
     public function mapEntity($entity, array $params, array $allowedFields)
     {
+        $em = $this->doctrineRegistry->getManagerForClass(get_class($entity));
+
         $entityMethods = get_class_methods($entity);
-        $metadata = $this->em->getClassMetadata(get_class($entity));
+        $metadata = $em->getClassMetadata(get_class($entity));
 
         foreach ($metadata->getFieldNames() as $fieldName) {
             if (!in_array($fieldName, $allowedFields) || 'id' == $fieldName) { // ID is always generated dynamically
@@ -233,7 +259,7 @@ class EntityDataMapperService
                     if ('-' == $rawValue) {
                         $this->fm->set($entity, $fieldName, array_merge(array(null), $methodParams));
                     } else {
-                        $value = $this->em->getRepository($mapping['targetEntity'])->find($rawValue);
+                        $value = $em->getRepository($mapping['targetEntity'])->find($rawValue);
                         if ($value) {
                             $this->fm->set($entity, $fieldName, array_merge(array($value), $methodParams));
                         }
@@ -277,7 +303,7 @@ class EntityDataMapperService
                                 $col->removeElement($refEntity);
 
                                 if (CMI::MANY_TO_MANY == $mapping['type']) {
-                                    $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
+                                    $refMetadata = $em->getClassMetadata(get_class($refEntity));
 
                                     // bidirectional
                                     if ($refMetadata->hasAssociation($mapping['mappedBy'])) {
@@ -309,7 +335,7 @@ class EntityDataMapperService
                                 $col->add($refEntity);
 
                                 if (CMI::MANY_TO_MANY == $mapping['type']) {
-                                    $refMetadata = $this->em->getClassMetadata(get_class($refEntity));
+                                    $refMetadata = $em->getClassMetadata(get_class($refEntity));
 
                                     // bidirectional
                                     if ($refMetadata->hasAssociation($mapping['mappedBy'])) {
@@ -335,7 +361,7 @@ class EntityDataMapperService
             return array();
         }
 
-        $qb = $this->em->createQueryBuilder();
+        $qb = $this->doctrineRegistry->getManagerForClass($entityFqcn)->createQueryBuilder();
         $qb->select('e')
             ->from($entityFqcn, 'e')
             ->where($qb->expr()->in('e.id', $ids));

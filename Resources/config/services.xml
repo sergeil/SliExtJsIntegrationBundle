@@ -14,7 +14,7 @@
     <services>
         <service id="sli.extjsintegration.sorting_field_resolver"
                  class="%sli.extjsintegration.sorting_field_resolver.class%">
-            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="doctrine" />
         </service>
         
         <service id="sli.extjsintegration.method_invocation_parameters_provider"
@@ -24,7 +24,7 @@
 
         <service id="sli.extjsintegration.entity_data_mapper"
                  class="%sli.extjsintegration.entity_data_mapper.class%">
-            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="doctrine" />
             <argument type="service" id="security.context" />
             <argument type="service" id="sli.aux.javabeans_ofm" />
             <argument type="service" id="sli.extjsintegration.method_invocation_parameters_provider" />
@@ -33,7 +33,7 @@
 
         <service id="sli.extjsintegration.extjs_query_builder"
                  class="%sli.extjsintegration.extjs_query_builder.class%">
-            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="doctrine" />
             <argument type="service" id="sli.extjsintegration.entity_data_mapper" />
             <argument type="service" id="sli.extjsintegration.sorting_field_resolver" />
         </service>

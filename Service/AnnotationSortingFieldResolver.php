@@ -4,7 +4,10 @@ namespace Sli\ExtJsIntegrationBundle\Service;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\ORM\EntityManagerInterface;
 use Sli\AuxBundle\Util\Toolkit as Tk;
+use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
+use Symfony\Bridge\Doctrine\RegistryInterface;
 
 require_once __DIR__.'/SortingFieldAnnotations.php';
 
@@ -13,13 +16,27 @@ require_once __DIR__.'/SortingFieldAnnotations.php';
  */
 class AnnotationSortingFieldResolver implements SortingFieldResolverInterface
 {
-    private $em;
+    /**
+     * @since 1.1.0
+     *
+     * @var RegistryInterface
+     */
+    private $doctrineRegistry;
     private $ar;
     private $defaultPropertyName;
 
-    public function __construct(EntityManager $em, $defaultPropertyName = 'id', AnnotationReader $ar = null)
+    /**
+     * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
+     * method is subclasses then you need to change its signature as well. First argument used to accept instance
+     * of EntityManager now it has been changed to RegistryInterface.
+     *
+     * @param RegistryInterface $doctrineRegistry
+     * @param string $defaultPropertyName
+     * @param AnnotationReader|null $ar
+     */
+    public function __construct(RegistryInterface $doctrineRegistry, $defaultPropertyName = 'id', AnnotationReader $ar = null)
     {
-        $this->em = $em;
+        $this->doctrineRegistry = $doctrineRegistry;
 
         $this->ar = $ar;
         if (null === $ar) {
@@ -45,7 +62,7 @@ class AnnotationSortingFieldResolver implements SortingFieldResolverInterface
 
     public function resolve($entityFqcn, $fieldName)
     {
-        $metadata = $this->em->getClassMetadata($entityFqcn);
+        $metadata = $this->doctrineRegistry->getManagerForClass($entityFqcn)->getClassMetadata($entityFqcn);
         if (!$metadata) {
             throw new \RuntimeException("Unable to load metadata for class '$entityFqcn'.");
         }
