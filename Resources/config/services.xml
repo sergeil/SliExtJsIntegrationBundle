@@ -25,7 +25,7 @@
         <service id="sli.extjsintegration.entity_data_mapper"
                  class="%sli.extjsintegration.entity_data_mapper.class%">
             <argument type="service" id="doctrine" />
-            <argument type="service" id="security.context" />
+            <argument type="service" id="security.token_storage" />
             <argument type="service" id="sli.aux.javabeans_ofm" />
             <argument type="service" id="sli.extjsintegration.method_invocation_parameters_provider" />
             <argument type="service" id="sli.extjsintegration.complex_field_value_converters_provider" />

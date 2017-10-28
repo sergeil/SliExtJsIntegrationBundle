@@ -6,6 +6,8 @@ use Doctrine\ORM\EntityManager;
 use Sli\ExpanderBundle\Ext\ContributorInterface;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
 use Symfony\Bridge\Doctrine\RegistryInterface;
+use Symfony\Component\HttpKernel\Kernel;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\SecurityContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
@@ -36,7 +38,7 @@ class EntityDataMapperService
      */
     private $doctrineRegistry;
 
-    private $sc;
+    private $tokenStorage;
     private $fm;
     private $paramsProvider;
     private $complexFiledValueConvertersProvider;
@@ -46,22 +48,32 @@ class EntityDataMapperService
      * method is subclasses then you need to change its signature as well. First argument used to accept instance
      * of EntityManager now it has been changed to RegistryInterface.
      *
+     * @internal Since 2.0.0
+     *
      * @param RegistryInterface $doctrineRegistry
-     * @param SecurityContext $sc
+     * @param TokenStorageInterface $tokenStorage
      * @param JavaBeansObjectFieldsManager $fm
      * @param MethodInvocationParametersProviderInterface $paramsProvider
      * @param ContributorInterface $complexFieldValueConvertersProvider
      */
     public function __construct(
-        RegistryInterface $doctrineRegistry, SecurityContext $sc, JavaBeansObjectFieldsManager $fm,
+        RegistryInterface $doctrineRegistry,
+        TokenStorageInterface $tokenStorage,
+        JavaBeansObjectFieldsManager $fm,
         MethodInvocationParametersProviderInterface $paramsProvider,
         ContributorInterface $complexFieldValueConvertersProvider)
     {
         $this->doctrineRegistry = $doctrineRegistry;
-        $this->sc = $sc;
+        $this->tokenStorage = $tokenStorage;
         $this->fm = $fm;
         $this->paramsProvider = $paramsProvider;
         $this->complexFiledValueConvertersProvider = $complexFieldValueConvertersProvider;
+    }
+
+    private function getAuthenticatedUser()
+    {
+        // Both TokenStorage and SecurityContext share "getToken" method
+        return $this->tokenStorage->getToken()->getStorage();
     }
 
     /**
@@ -72,7 +84,7 @@ class EntityDataMapperService
     protected function getUserPreferences()
     {
         /* @var PreferencesAwareUserInterface $u */
-        $u = $this->sc->getToken()->getUser();
+        $u = $this->getAuthenticatedUser();
         if (!$u) {
             throw new \RuntimeException('No authenticated user available in your session.');
         } else if (!($u instanceof PreferencesAwareUserInterface)) {
