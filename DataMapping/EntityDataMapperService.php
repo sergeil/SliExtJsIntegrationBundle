@@ -8,7 +8,6 @@ use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
 use Symfony\Bridge\Doctrine\RegistryInterface;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
-use Symfony\Component\Security\Core\SecurityContext;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Sli\AuxBundle\Util\Toolkit;
@@ -73,7 +72,7 @@ class EntityDataMapperService
     private function getAuthenticatedUser()
     {
         // Both TokenStorage and SecurityContext share "getToken" method
-        return $this->tokenStorage->getToken()->getStorage();
+        return $this->tokenStorage->getToken()->getUser();
     }
 
     /**
