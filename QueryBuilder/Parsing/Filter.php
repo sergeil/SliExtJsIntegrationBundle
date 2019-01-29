@@ -20,6 +20,7 @@ class Filter implements FilterInterface
     const COMPARATOR_NOT_IN = 'notIn';
     const COMPARATOR_IS_NULL = 'isNull';
     const COMPARATOR_IS_NOT_NULL = 'isNotNull';
+    const ARRAY_DELIMITER = ',';
 
     private $input;
     private $parsedInput;
@@ -96,7 +97,7 @@ class Filter implements FilterInterface
             $parsed['value'] = substr($value, $separatorPosition + 1);
 
             if (in_array($parsed['comparator'], array(self::COMPARATOR_IN, self::COMPARATOR_NOT_IN))) {
-                $parsed['value'] = '' != $parsed['value'] ? explode(',', $parsed['value']) : array();
+                $parsed['value'] = '' != $parsed['value'] ? explode(self::ARRAY_DELIMITER, $parsed['value']) : array();
             }
         }
 
@@ -137,7 +138,11 @@ class Filter implements FilterInterface
         if (in_array($this->parsedInput['comparator'], array(self::COMPARATOR_IS_NULL, self::COMPARATOR_IS_NOT_NULL))) {
             $value = $this->parsedInput['comparator'];
         } else {
-            $value = $this->parsedInput['comparator'] . ':' . $this->parsedInput['value'];
+            $parsedValue = $this->parsedInput['value'];
+            if (is_array($this->parsedInput['value'])) {
+                $parsedValue = implode(self::ARRAY_DELIMITER, $this->parsedInput['value']);
+            }
+            $value = $this->parsedInput['comparator'] . ':' . $parsedValue;
         }
 
         return array(
