@@ -163,4 +163,73 @@ class FilterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(Filter::COMPARATOR_IS_NULL, $f->getComparator());
         $this->assertNull($f->getValue());
     }
+
+    /**
+     * @return array
+     */
+    public function compileDataProvider()
+    {
+        $result = array(
+            array(
+                'filter' => Filter::create('user.firstName', Filter::COMPARATOR_EQUAL, 'Sergei'),
+                'expected' => array('property' => 'user.firstName', 'value' => 'eq:Sergei'),
+            ),
+            array(
+                'filter' => Filter::create('user.firstName', Filter::COMPARATOR_NOT_EQUAL, 'Sergei'),
+                'expected' => array('property' => 'user.firstName', 'value' => 'neq:Sergei'),
+            ),
+            array(
+                'filter' => Filter::create('user.firstName', Filter::COMPARATOR_LIKE, 'Liss%'),
+                'expected' => array('property' => 'user.firstName', 'value' => 'like:Liss%'),
+            ),
+            array(
+                'filter' => Filter::create('user.firstName', Filter::COMPARATOR_NOT_LIKE, 'Liss%'),
+                'expected' => array('property' => 'user.firstName', 'value' => 'notLike:Liss%'),
+            ),
+            array(
+                'filter' => Filter::create('user.branch', Filter::COMPARATOR_IN, '1,2,3'),
+                'expected' => array('property' => 'user.branch', 'value' => 'in:1,2,3'),
+            ),
+            array(
+                'filter' => Filter::create('user.branch', Filter::COMPARATOR_NOT_IN, '1,2,3'),
+                'expected' => array('property' => 'user.branch', 'value' => 'notIn:1,2,3'),
+            ),
+            array(
+                'filter' => Filter::create('user.branch', Filter::COMPARATOR_IS_NULL),
+                'expected' => array('property' => 'user.branch', 'value' => 'isNull'),
+            ),
+            array(
+                'filter' => Filter::create('user.branch', Filter::COMPARATOR_IS_NOT_NULL),
+                'expected' => array('property' => 'user.branch', 'value' => 'isNotNull'),
+            ),
+            array(
+                'filter' => Filter::create('price', Filter::COMPARATOR_GREATER_THAN, '5'),
+                'expected' => array('property' => 'price', 'value' => 'gt:5'),
+            ),
+            array(
+                'filter' => Filter::create('price', Filter::COMPARATOR_GREATER_THAN_OR_EQUAL, '5'),
+                'expected' => array('property' => 'price', 'value' => 'gte:5'),
+            ),
+            array(
+                'filter' => Filter::create('price', Filter::COMPARATOR_LESS_THAN, '5'),
+                'expected' => array('property' => 'price', 'value' => 'lt:5'),
+            ),
+            array(
+                'filter' => Filter::create('price', Filter::COMPARATOR_LESS_THAN_OR_EQUAL, '5'),
+                'expected' => array('property' => 'price', 'value' => 'lte:5'),
+            ),
+        );
+        return $result;
+    }
+
+    /**
+     * @dataProvider compileDataProvider
+     *
+     * @param Filter $filter
+     * @param $expected
+     */
+    public function testCompile(Filter $filter, $expected)
+    {
+        $this->assertSame($expected, $filter->compile());
+    }
 }
