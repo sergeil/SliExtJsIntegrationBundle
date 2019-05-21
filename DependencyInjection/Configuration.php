@@ -26,8 +26,14 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder()
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('sli_ext_js_integration');
+        $treeBuilder = new TreeBuilder('sli_ext_js_integration');
+
+        if (method_exists($treeBuilder, 'getRootNode')) {
+            $rootNode = $treeBuilder->getRootNode();
+        } else {
+            // BC layer for symfony/config 4.1 and older
+            $rootNode = $treeBuilder->root('sli_ext_js_integration');
+        }
 
         // Here you should define the parameters that are allowed to
         // configure your bundle. See the documentation linked above for

@@ -14,7 +14,7 @@ class ChainSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals(0, count($c->all()));
 
-        $resolver = $this->getMock(
+        $resolver = $this->createMock(
             '\Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface'
         );
 
@@ -29,7 +29,7 @@ class ChainSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
 
     private function createResolver($entityFqcn, $paramName, $resultValue)
     {
-        $resolver = $this->getMock(
+        $resolver = $this->createMock(
             '\Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface'
         );
         $resolver->expects($this->once())
@@ -48,7 +48,7 @@ class ChainSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
         $resolver1 = $this->createResolver($entityFqcn, $paramName, null);
         $resolver2 = $this->createResolver($entityFqcn, $paramName, null);
         $resolver3 = $this->createResolver($entityFqcn, $paramName, 'fooResult');
-        $resolver4 = $this->getMock(
+        $resolver4 = $this->createMock(
             '\Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface'
         );
         $resolver4->expects($this->never())->method('resolve');

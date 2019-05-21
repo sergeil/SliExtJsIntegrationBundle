@@ -1,0 +1,36 @@
+framework:
+    secret: "Hell yeah!"
+    csrf_protection: true
+    session: ~
+    validation: { enable_annotations: true }
+    translator: { fallback: "en" }
+    router:
+        resource: "%kernel.root_dir%/config/routing.yml"
+        strict_requirements: ~
+
+security:
+    providers:
+        in_memory: { memory: ~ }
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+        main:
+            anonymous: ~
+
+# Doctrine Configuration
+doctrine:
+    dbal:
+        # http://symfony.com/doc/current/configuration/external_parameters.html
+        driver:   pdo_mysql
+        host:     %db_host%
+        port:     %db_port%
+        user:     %db_user%
+        password: %db_password%
+        dbname:   sergeil_extjsintegration
+        charset:  UTF8
+        logging:  false
+
+    orm:
+        auto_generate_proxy_classes: true
+        auto_mapping: true

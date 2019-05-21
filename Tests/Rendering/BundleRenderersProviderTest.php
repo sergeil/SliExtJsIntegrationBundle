@@ -47,7 +47,7 @@ class BundleRenderersProviderTest extends \PHPUnit_Framework_TestCase
             ))
         );
 
-        $kernel = $this->getMock('Symfony\Component\HttpKernel\Kernel', array(), array(), '', false);
+        $kernel = $this->createMock('Symfony\Component\HttpKernel\Kernel', array(), array(), '', false);
         $kernel->expects($this->once())
                ->method('getBundles')
                ->will($this->returnValue($bundles));

@@ -45,19 +45,19 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
 {
     private function createDoctrineRegistry($sourceEntity, $assocProperty, $targetEntity)
     {
-        $fooMetadata = $this->getMock('Doctrine\ORM\Mapping\ClassMetadata', array(), array(), '', false);
+        $fooMetadata = $this->createMock('Doctrine\ORM\Mapping\ClassMetadata', array(), array(), '', false);
         $fooMetadata->expects($this->any())
             ->method('getAssociationMapping')
             ->with($assocProperty)
             ->will($this->returnValue(array('targetEntity' => $targetEntity)));
 
-        $em = $this->getMock('Doctrine\ORM\EntityManager', array(), array(), '', false);
+        $em = $this->createMock('Doctrine\ORM\EntityManager', array(), array(), '', false);
         $em->expects($this->any())
             ->method('getClassMetadata')
             ->with($sourceEntity)
             ->will($this->returnValue($fooMetadata));
 
-        $doctrineRegistry = $this->getMock('Symfony\Bridge\Doctrine\RegistryInterface');
+        $doctrineRegistry = $this->createMock('Symfony\Bridge\Doctrine\RegistryInterface');
 
         $doctrineRegistry->expects($this->any())
                          ->method('getManagerForClass')
