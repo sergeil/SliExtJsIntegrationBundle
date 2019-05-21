@@ -211,7 +211,7 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
     public function testBuildQueryOrderByAssociatedEntityWithProvidedSortingFieldResolver()
     {
-        $sortingResolver = $this->getMock(
+        $sortingResolver = $this->createMock(
             '\Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface'
         );
         $sortingResolver->expects($this->atLeastOnce())

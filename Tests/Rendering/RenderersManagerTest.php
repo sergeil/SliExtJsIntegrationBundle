@@ -18,8 +18,8 @@ class RenderersManagerTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->mockProvider = $this->getMock('Sli\ExtJsIntegrationBundle\Rendering\RenderersProviderInterface');
-        $this->mockContainer = $this->getMock('Symfony\Component\DependencyInjection\ContainerInterface');
+        $this->mockProvider = $this->createMock('Sli\ExtJsIntegrationBundle\Rendering\RenderersProviderInterface');
+        $this->mockContainer = $this->createMock('Symfony\Component\DependencyInjection\ContainerInterface');
 
         $this->rm = new RenderersManager(
             $this->mockProvider,

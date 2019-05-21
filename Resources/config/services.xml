@@ -23,7 +23,8 @@
         </service>
 
         <service id="sli.extjsintegration.entity_data_mapper"
-                 class="%sli.extjsintegration.entity_data_mapper.class%">
+                 class="%sli.extjsintegration.entity_data_mapper.class%"
+                 public="true">
             <argument type="service" id="doctrine" />
             <argument type="service" id="security.token_storage" />
             <argument type="service" id="sli.aux.javabeans_ofm" />
@@ -32,7 +33,8 @@
         </service>
 
         <service id="sli.extjsintegration.extjs_query_builder"
-                 class="%sli.extjsintegration.extjs_query_builder.class%">
+                 class="%sli.extjsintegration.extjs_query_builder.class%"
+                 public="true">
             <argument type="service" id="doctrine" />
             <argument type="service" id="sli.extjsintegration.entity_data_mapper" />
             <argument type="service" id="sli.extjsintegration.sorting_field_resolver" />
@@ -44,6 +46,7 @@
             <argument type="service" id="sli.extjsintegration.renderers_provider" />
             <argument type="service" id="service_container" />
         </service>
+
         <service id="sli.extjsintegration.bundle_renderers_provider"
                  class="Sli\ExtJsIntegrationBundle\Rendering\BundleRenderersProvider"
                  public="false">
