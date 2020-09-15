@@ -43,7 +43,7 @@ class AnnotationMethodInvocationParametersProvider implements MethodInvocationPa
 
             $result = array();
             foreach ($ann->value as $serviceName) {
-                if ($serviceName{strlen($serviceName)-1} == '*') { // optional service
+                if ($serviceName[strlen($serviceName)-1] == '*') { // optional service
                     $result[] = $this->container->get($serviceName, ContainerInterface::NULL_ON_INVALID_REFERENCE);
                 } else {
                     $result[] = $this->container->get($serviceName, ContainerInterface::EXCEPTION_ON_INVALID_REFERENCE);
