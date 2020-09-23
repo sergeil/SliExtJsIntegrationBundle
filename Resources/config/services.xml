@@ -40,6 +40,8 @@
             <argument type="service" id="sli.extjsintegration.sorting_field_resolver" />
         </service>
 
+        <service id="%sli.extjsintegration.extjs_query_builder.class%" alias="sli.extjsintegration.extjs_query_builder" />
+
         <service id="sli.extjsintegration.renderers_manager"
                  class="Sli\ExtJsIntegrationBundle\Rendering\RenderersManager">
 
