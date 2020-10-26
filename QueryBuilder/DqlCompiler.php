@@ -7,7 +7,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 /**
  * @internal
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
- */ 
+ */
 class DqlCompiler
 {
     private $exprMgr;
@@ -37,7 +37,7 @@ class DqlCompiler
         }
 
         if ($expression->getAlias()) {
-            $result .= ' AS ' . $expression->getAlias();
+            $result .= ' AS ' . ($expression->isHidden() ? 'HIDDEN ' : '') . $expression->getAlias();
         }
 
         return $result;

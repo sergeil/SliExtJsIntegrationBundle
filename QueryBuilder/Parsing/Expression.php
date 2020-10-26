@@ -4,13 +4,14 @@ namespace Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing;
 
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
- */ 
+ */
 class Expression
 {
     private $alias = false;
     private $function = false;
     private $functionArgs = array();
     private $expression;
+    private $hidden;
 
     /**
      * @param string|array $expression
@@ -33,6 +34,12 @@ class Expression
             }
         }
 
+        if (is_array($expression) && isset($expression['hidden']) && $expression['hidden']) {
+            $this->hidden = true;
+        } else {
+            $this->hidden = false;
+        }
+
         $this->expression = $expression;
 
         if (   is_string($alias) && strlen($alias) > 1
@@ -42,6 +49,9 @@ class Expression
         }
     }
 
+    /**
+     * @param string $functionName
+     */
     private function validateFunctionName($functionName)
     {
         if (!preg_match('/^[\w_0-9]+$/', $functionName)) {
@@ -57,11 +67,22 @@ class Expression
         return $this->expression;
     }
 
+    /**
+     * @return bool
+     */
     public function isReference()
     {
         $exp = $this->getExpression();
 
         return ':' == $exp{0};
+    }
+
+    /**
+     * @return bool
+     */
+    public function isHidden()
+    {
+        return $this->hidden;
     }
 
     /**
