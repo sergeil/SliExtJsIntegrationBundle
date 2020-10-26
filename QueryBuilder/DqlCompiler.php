@@ -37,7 +37,7 @@ class DqlCompiler
         }
 
         if ($expression->getAlias()) {
-            $result .= ' AS ' . $expression->getAlias();
+            $result .= ' AS ' . ($expression->isHidden() ? 'HIDDEN ' : '') . $expression->getAlias();
         }
 
         return $result;

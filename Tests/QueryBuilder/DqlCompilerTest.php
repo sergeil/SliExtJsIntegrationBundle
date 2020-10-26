@@ -59,4 +59,20 @@ class DqlCompilerTest extends AbstractDatabaseTestCase
 
         $this->assertEquals('CONCAT(e.firstname, CONCAT(?0, e.lastname)) AS fullname', $compiledExpression);
     }
+
+    public function testCompileHiddenFunction()
+    {
+        $rawExpr = array(
+            'function' => 'CEIL',
+            'args' => array(
+                ':price'
+            ),
+            'hidden' => true,
+        );
+        $expr = new Expression($rawExpr, 'int_price');
+
+        $compiledExpression = $this->compiler->compile($expr, $this->binder);
+
+        $this->assertEquals('CEIL(e.price) AS HIDDEN int_price', $compiledExpression);
+    }
 }
