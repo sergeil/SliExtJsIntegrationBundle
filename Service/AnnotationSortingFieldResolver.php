@@ -7,7 +7,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\EntityManagerInterface;
 use Sli\AuxBundle\Util\Toolkit as Tk;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Common\Persistence\ManagerRegistry;
 
 require_once __DIR__.'/SortingFieldAnnotations.php';
 
@@ -19,7 +19,7 @@ class AnnotationSortingFieldResolver implements SortingFieldResolverInterface
     /**
      * @since 1.1.0
      *
-     * @var RegistryInterface
+     * @var ManagerRegistry
      */
     private $doctrineRegistry;
     private $ar;
@@ -28,13 +28,13 @@ class AnnotationSortingFieldResolver implements SortingFieldResolverInterface
     /**
      * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
      * method is subclasses then you need to change its signature as well. First argument used to accept instance
-     * of EntityManager now it has been changed to RegistryInterface.
+     * of EntityManager now it has been changed to ManagerRegistry.
      *
-     * @param RegistryInterface $doctrineRegistry
+     * @param ManagerRegistry $doctrineRegistry
      * @param string $defaultPropertyName
      * @param AnnotationReader|null $ar
      */
-    public function __construct(RegistryInterface $doctrineRegistry, $defaultPropertyName = 'id', AnnotationReader $ar = null)
+    public function __construct(ManagerRegistry $doctrineRegistry, $defaultPropertyName = 'id', AnnotationReader $ar = null)
     {
         $this->doctrineRegistry = $doctrineRegistry;
 
