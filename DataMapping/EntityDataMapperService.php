@@ -5,7 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\DataMapping;
 use Doctrine\ORM\EntityManager;
 use Sli\ExpanderBundle\Ext\ContributorInterface;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Common\Persistence\ManagerRegistry;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -33,7 +33,7 @@ class EntityDataMapperService
     /**
      * @since 1.1.0
      *
-     * @var RegistryInterface
+     * @var ManagerRegistry
      */
     private $doctrineRegistry;
 
@@ -45,18 +45,18 @@ class EntityDataMapperService
     /**
      * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
      * method is subclasses then you need to change its signature as well. First argument used to accept instance
-     * of EntityManager now it has been changed to RegistryInterface.
+     * of EntityManager now it has been changed to ManagerRegistry.
      *
      * @internal Since 2.0.0
      *
-     * @param RegistryInterface $doctrineRegistry
+     * @param ManagerRegistry $doctrineRegistry
      * @param TokenStorageInterface $tokenStorage
      * @param JavaBeansObjectFieldsManager $fm
      * @param MethodInvocationParametersProviderInterface $paramsProvider
      * @param ContributorInterface $complexFieldValueConvertersProvider
      */
     public function __construct(
-        RegistryInterface $doctrineRegistry,
+        ManagerRegistry $doctrineRegistry,
         TokenStorageInterface $tokenStorage,
         JavaBeansObjectFieldsManager $fm,
         MethodInvocationParametersProviderInterface $paramsProvider,

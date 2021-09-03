@@ -13,7 +13,7 @@ use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 use Sli\ExtJsIntegrationBundle\Tests\Group;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Common\Persistence\ManagerRegistry;
 
 require_once __DIR__.'/DummyEntities.php';
 
@@ -43,7 +43,7 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         self::$kernel = static::createKernel();
         self::$kernel->boot();
 
-        /* @var RegistryInterface $doctrine */
+        /* @var ManagerRegistry $doctrine */
         $doctrine = self::$kernel->getContainer()->get('doctrine');
 
         $em = $doctrine->getManager();
