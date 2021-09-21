@@ -238,9 +238,12 @@ class EntityDataMapperService
                                 /* @var ComplexFieldValueConverterInterface $converter */
                                 if ($converter->isResponsible($value, $fieldName, $metadata)) {
                                     $convertedValue = $converter->convert($value, $fieldName, $metadata);
+                                    break;
                                 }
                             }
-                        } else {
+                        }
+
+                        if (null === $convertedValue) {
                             $convertedValue = $this->convertValue($value, $mapping['type']);
                         }
 
