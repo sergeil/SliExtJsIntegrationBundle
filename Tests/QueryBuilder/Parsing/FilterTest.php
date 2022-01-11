@@ -7,7 +7,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Filter;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class FilterTest extends \PHPUnit_Framework_TestCase
+class FilterTest extends \PHPUnit\Framework\TestCase
 {
     public function testIsValid()
     {

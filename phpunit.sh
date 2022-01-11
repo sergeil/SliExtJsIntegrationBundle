@@ -2,7 +2,7 @@
 
 set -eu
 
-PHP_VERSION=5.6
+PHP_VERSION=7.1
 
 if ! type docker > /dev/null; then
     echo "Docker is required to run tests."

@@ -13,7 +13,7 @@ use Sli\ExtJsIntegrationBundle\Tests\DummyAddress;
 use Sli\ExtJsIntegrationBundle\Tests\DummyCountry;
 use Sli\ExtJsIntegrationBundle\Tests\DummyUser;
 use Sli\ExtJsIntegrationBundle\Tests\Group;
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 
 require_once __DIR__.'/DummyEntities.php';
 
@@ -53,7 +53,7 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
 
         // injecting a new metadata driver for our test entity
         $annotationDriver = new AnnotationDriver(
-            self::$kernel->getContainer()->get('annotation_reader'),
+            self::$kernel->getContainer()->get('sli.extjsintegration.tests.annotation_reader'),
             array(__DIR__)
         );
 

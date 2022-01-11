@@ -7,7 +7,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class MutableSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
+class MutableSortingFieldResolverTest extends \PHPUnit\Framework\TestCase
 {
     public function testAddAndResolveMethods()
     {
