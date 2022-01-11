@@ -57,7 +57,7 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
             ->with($sourceEntity)
             ->will($this->returnValue($fooMetadata));
 
-        $doctrineRegistry = $this->createMock('Symfony\Bridge\Doctrine\RegistryInterface');
+        $doctrineRegistry = $this->createMock('Doctrine\Common\Persistence\ManagerRegistry');
 
         $doctrineRegistry->expects($this->any())
                          ->method('getManagerForClass')

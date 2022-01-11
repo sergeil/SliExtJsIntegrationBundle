@@ -47,6 +47,11 @@ class DummyUser implements PreferencesAwareUserInterface
     public $groups;
 
     /**
+     * @Orm\Column(type="integer", nullable=true)
+     */
+    public $price = 0;
+
+    /**
      * @inheritDoc
      */
     public function getPreferences()

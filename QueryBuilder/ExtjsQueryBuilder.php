@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Symfony\Bridge\Doctrine\RegistryInterface;
+use Doctrine\Common\Persistence\ManagerRegistry;
 
 /**
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which
@@ -68,7 +68,7 @@ class ExtjsQueryBuilder
     /**
      * @since 1.1.0
      *
-     * @var RegistryInterface
+     * @var ManagerRegistry
      */
     private $doctrineRegistry;
 
@@ -78,13 +78,13 @@ class ExtjsQueryBuilder
     /**
      * Beware! Constructor's signature has been slightly changed in v1.1.0, so it if you have overridden this
      * method is subclasses then you need to change its signature as well. First argument used to accept instance
-     * of EntityManager now it has been changed to RegistryInterface.
+     * of EntityManager now it has been changed to ManagerRegistry.
      *
-     * @param RegistryInterface $doctrineRegistry
+     * @param ManagerRegistry $doctrineRegistry
      * @param EntityDataMapperService $mapper
      * @param SortingFieldResolverInterface $sortingFieldResolver
      */
-    public function __construct(RegistryInterface $doctrineRegistry, EntityDataMapperService $mapper, SortingFieldResolverInterface $sortingFieldResolver)
+    public function __construct(ManagerRegistry $doctrineRegistry, EntityDataMapperService $mapper, SortingFieldResolverInterface $sortingFieldResolver)
     {
         $this->doctrineRegistry = $doctrineRegistry;
         $this->mapper = $mapper;
