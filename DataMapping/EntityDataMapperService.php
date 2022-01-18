@@ -72,7 +72,9 @@ class EntityDataMapperService
     private function getAuthenticatedUser()
     {
         // Both TokenStorage and SecurityContext share "getToken" method
-        return $this->tokenStorage->getToken()->getUser();
+        if ($token = $this->tokenStorage->getToken()) {
+            return $token->getUser();
+        }
     }
 
     /**

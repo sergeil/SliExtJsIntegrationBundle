@@ -21,6 +21,21 @@ class DummyUser implements PreferencesAwareUserInterface
     public $id;
 
     /**
+     * @Orm\Column(type="boolean")
+     */
+    public $isActive;
+
+    /**
+     * @Orm\Column(type="integer")
+     */
+    public $accessLevel;
+
+    /**
+     * @Orm\Column(type="string", nullable=true)
+     */
+    public $email;
+
+    /**
      * @Orm\Column(type="string", nullable=true)
      */
     public $firstname;
@@ -52,18 +67,58 @@ class DummyUser implements PreferencesAwareUserInterface
     public $price = 0;
 
     /**
+     * @Orm\Column(type="json_array", nullable=false)
+     */
+    public $meta = array();
+
+    public function setActive($isActive)
+    {
+        $this->isActive = $isActive;
+    }
+
+    public function setAccessLevel($accessLevel)
+    {
+        $this->accessLevel = $accessLevel;
+    }
+
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+
+    public function setMeta($meta)
+    {
+        $this->meta = $meta;
+    }
+
+    /**
      * @inheritDoc
      */
     public function getPreferences()
     {
         return array(
-            PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT => 'd.m.Y'
+            PreferencesAwareUserInterface::SETTINGS_DATE_FORMAT => 'd.m.y',
+            PreferencesAwareUserInterface::SETTINGS_DATETIME_FORMAT => 'd.m.y H:i',
+            PreferencesAwareUserInterface::SETTINGS_MONTH_FORMAT => 'm.Y',
         );
     }
 
-    public function __construct()
+    public function __construct($email = null, $accessLevel = 0, $isActive = true)
     {
+        $this->email = $email;
+        $this->accessLevel = $accessLevel;
+        $this->isActive = $isActive;
+
         $this->groups = new ArrayCollection();
+    }
+
+    public function __toString()
+    {
+        return implode('-', array(
+            $this->id,
+            $this->firstname,
+            $this->lastname,
+        ));
     }
 
     static public function clazz()
