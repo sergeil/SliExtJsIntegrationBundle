@@ -72,7 +72,9 @@ class EntityDataMapperService
     private function getAuthenticatedUser()
     {
         // Both TokenStorage and SecurityContext share "getToken" method
-        return $this->tokenStorage->getToken()->getUser();
+        if ($token = $this->tokenStorage->getToken()) {
+            return $token->getUser();
+        }
     }
 
     /**
@@ -238,9 +240,12 @@ class EntityDataMapperService
                                 /* @var ComplexFieldValueConverterInterface $converter */
                                 if ($converter->isResponsible($value, $fieldName, $metadata)) {
                                     $convertedValue = $converter->convert($value, $fieldName, $metadata);
+                                    break;
                                 }
                             }
-                        } else {
+                        }
+
+                        if (null === $convertedValue) {
                             $convertedValue = $this->convertValue($value, $mapping['type']);
                         }
 
