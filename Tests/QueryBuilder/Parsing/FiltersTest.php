@@ -9,7 +9,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrFilter;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class FiltersTest extends \PHPUnit_Framework_TestCase
+class FiltersTest extends \PHPUnit\Framework\TestCase
 {
     public function testHowWellItWorks()
     {

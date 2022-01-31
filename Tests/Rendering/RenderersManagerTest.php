@@ -8,7 +8,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class RenderersManagerTest extends \PHPUnit_Framework_TestCase
+class RenderersManagerTest extends \PHPUnit\Framework\TestCase
 {
     /* @var \Sli\ExtJsIntegrationBundle\Rendering\RenderersManager */
     private $rm;

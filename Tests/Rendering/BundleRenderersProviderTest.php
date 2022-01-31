@@ -27,7 +27,7 @@ class DummyTestBundle extends Bundle implements RenderersAwareBundle
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class BundleRenderersProviderTest extends \PHPUnit_Framework_TestCase
+class BundleRenderersProviderTest extends \PHPUnit\Framework\TestCase
 {
     /* @var BundleRenderersProvider */
     private $provider;

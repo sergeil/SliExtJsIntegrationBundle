@@ -5,7 +5,7 @@ namespace Sli\ExtJsIntegrationBundle\DataMapping;
 use Doctrine\ORM\EntityManager;
 use Sli\ExpanderBundle\Ext\ContributorInterface;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Doctrine\Common\Collections\ArrayCollection;

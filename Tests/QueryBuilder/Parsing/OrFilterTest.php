@@ -8,7 +8,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\OrFilter;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class OrFilterTest extends \PHPUnit_Framework_TestCase
+class OrFilterTest extends \PHPUnit\Framework\TestCase
 {
     public function testHowWellItWorksWithValidInput()
     {

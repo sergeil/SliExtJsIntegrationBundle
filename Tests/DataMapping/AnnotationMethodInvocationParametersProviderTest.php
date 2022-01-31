@@ -41,7 +41,7 @@ class MockContainer extends Container
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class AnnotationMethodInvocationParametersProviderTest extends \PHPUnit_Framework_TestCase
+class AnnotationMethodInvocationParametersProviderTest extends \PHPUnit\Framework\TestCase
 {
     public function testGetParameters()
     {

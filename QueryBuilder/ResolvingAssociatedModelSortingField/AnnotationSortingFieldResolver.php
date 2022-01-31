@@ -7,7 +7,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Sli\AuxBundle\Util\Toolkit as Tk;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField\SortingFieldResolverInterface;
 use Sli\ExtJsIntegrationBundle\Service\QueryOrder;
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 
 require_once __DIR__ . '/../../Service/SortingFieldAnnotations.php';
 

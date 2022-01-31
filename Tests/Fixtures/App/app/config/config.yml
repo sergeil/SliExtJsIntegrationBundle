@@ -4,6 +4,11 @@ parameters:
     db_user: '%env(SYMFONY__DB_USER)%'
     db_password: '%env(SYMFONY__DB_PASSWORD)%'
 
+services:
+    sli.extjsintegration.tests.annotation_reader:
+        alias: annotation_reader
+        public: true
+
 framework:
     secret: "Hell yeah!"
     csrf_protection: true

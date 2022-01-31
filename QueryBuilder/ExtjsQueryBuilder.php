@@ -18,7 +18,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo as CMI;
 use Doctrine\ORM\QueryBuilder;
 use Sli\ExtJsIntegrationBundle\QueryBuilder\ExpressionManager;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * Class helps to build/execute complex queries according to the instructions sent from the client-side, which

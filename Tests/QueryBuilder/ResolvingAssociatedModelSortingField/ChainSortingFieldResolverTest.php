@@ -6,7 +6,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\ResolvingAssociatedModelSortingField
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class ChainSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
+class ChainSortingFieldResolverTest extends \PHPUnit\Framework\TestCase
 {
     public function testAdd_and_All_methods()
     {

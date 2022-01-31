@@ -7,7 +7,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\EntityManagerInterface;
 use Sli\AuxBundle\Util\Toolkit as Tk;
 use Sli\ExtJsIntegrationBundle\Util\EntityManagerResolver;
-use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\Persistence\ManagerRegistry;
 
 require_once __DIR__.'/SortingFieldAnnotations.php';
 

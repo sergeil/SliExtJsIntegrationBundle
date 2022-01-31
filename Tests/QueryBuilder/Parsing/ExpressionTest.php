@@ -7,7 +7,7 @@ use Sli\ExtJsIntegrationBundle\QueryBuilder\Parsing\Expression;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */ 
-class ExpressionTest extends \PHPUnit_Framework_TestCase
+class ExpressionTest extends \PHPUnit\Framework\TestCase
 {
     public function testSimpleExpressionWithoutAlias()
     {

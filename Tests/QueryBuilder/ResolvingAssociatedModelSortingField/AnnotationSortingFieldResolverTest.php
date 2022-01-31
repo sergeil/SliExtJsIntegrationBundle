@@ -41,7 +41,7 @@ class FaaEntity
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
+class AnnotationSortingFieldResolverTest extends \PHPUnit\Framework\TestCase
 {
     private function createDoctrineRegistry($sourceEntity, $assocProperty, $targetEntity)
     {
@@ -57,7 +57,7 @@ class AnnotationSortingFieldResolverTest extends \PHPUnit_Framework_TestCase
             ->with($sourceEntity)
             ->will($this->returnValue($fooMetadata));
 
-        $doctrineRegistry = $this->createMock('Doctrine\Common\Persistence\ManagerRegistry');
+        $doctrineRegistry = $this->createMock('Doctrine\Persistence\ManagerRegistry');
 
         $doctrineRegistry->expects($this->any())
                          ->method('getManagerForClass')

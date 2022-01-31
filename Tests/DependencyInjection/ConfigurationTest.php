@@ -9,7 +9,7 @@ use Symfony\Component\Config\Definition\Processor;
 /**
  * @author Sergei Lissovski <sergei.lissovski@gmail.com>
  */
-class ConfigurationTest extends \PHPUnit_Framework_TestCase
+class ConfigurationTest extends \PHPUnit\Framework\TestCase
 {
     /* @var Configuration */
     private $c;
