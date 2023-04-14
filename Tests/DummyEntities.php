@@ -67,7 +67,7 @@ class DummyUser implements PreferencesAwareUserInterface
     public $price = 0;
 
     /**
-     * @Orm\Column(type="json_array", nullable=false)
+     * @Orm\Column(type="json", nullable=false)
      */
     public $meta = array();
 

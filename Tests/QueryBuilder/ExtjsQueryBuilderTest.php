@@ -66,7 +66,9 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
             )
         ));
 
-        $qb->getQuery()->getResult();
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertEquals(3, count($users));
     }
 
     public function testBuildQueryBuilderWithIsNotNullFilter()
@@ -496,6 +498,8 @@ class ExtjsQueryBuilderTest extends AbstractDatabaseTestCase
 
         // before the fix Doctrine would throw an exception:
         // [Semantical Error] ... Class Sli\...\DummyCountry has no association named city
-        $qb->getQuery()->getResult();
+        $users = $qb->getQuery()->getResult();
+
+        $this->assertEquals(0, count($users));
     }
 }
