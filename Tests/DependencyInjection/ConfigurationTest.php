@@ -30,6 +30,8 @@ class ConfigurationTest extends \PHPUnit\Framework\TestCase
                 )
             ));
         }
+
+        $this->assertTrue(true);
     }
 
     public function testWithInvalidConfiguration()

@@ -31,7 +31,7 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
     /* @var \Symfony\Component\HttpKernel\Kernel $kernel */
     static protected $kernel;
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         // overriding this method prevents kernel from shutting down, so our hacked annotation driver from
         // setUpBeforeClass remains used
@@ -64,10 +64,17 @@ class AbstractDatabaseTestCase extends \Symfony\Bundle\FrameworkBundle\Test\WebT
         $reflInitMethod->invoke($metadataFactory);
 
         // dynamically adding a namespace
-        $reflDriverProp = $reflMetadataFactory->getProperty('driver');
+        if ($reflMetadataFactory->hasProperty('driver')) {
+            $reflDriverProp = $reflMetadataFactory->getProperty('driver');
+        } else {
+            $reflDriverProp = $reflMetadataFactory->getParentClass()->getProperty('driver');
+        }
         $reflDriverProp->setAccessible(true);
         /* @var \Doctrine\ORM\Mapping\Driver\DriverChain $driver */
         $driver = $reflDriverProp->getValue($metadataFactory);
+        if ($driver instanceof \Doctrine\Bundle\DoctrineBundle\Mapping\MappingDriver) {
+            $driver = $driver->getDriver();
+        }
         $driver->addDriver($annotationDriver, __NAMESPACE__);
 
         // adding dummy data & updating database

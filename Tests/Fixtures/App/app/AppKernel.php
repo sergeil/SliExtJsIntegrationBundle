@@ -38,4 +38,13 @@ class AppKernel extends Kernel
     {
         return sys_get_temp_dir().'/SliExtJsIntegrationBundle/logs';
     }
+
+    protected function getKernelParameters()
+    {
+        $parameters = parent::getKernelParameters();
+
+        $parameters['kernel.root_dir'] = __DIR__;
+
+        return $parameters;
+    }
 }

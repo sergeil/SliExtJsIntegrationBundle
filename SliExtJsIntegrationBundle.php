@@ -18,12 +18,15 @@ class SliExtJsIntegrationBundle extends Bundle
         $reflClass = new \ReflectionClass(__CLASS__);
         $path = dirname($reflClass->getFileName());
 
-        AnnotationRegistry::registerFile(
-            $path . '/DataMapping/Annotations.php'
-        );
-        AnnotationRegistry::registerFile(
-            $path . '/Service/SortingFieldAnnotations.php'
-        );
+        // Starting from `doctrine/annotations 2.0` annotations will be autoloaded
+        if (method_exists(AnnotationRegistry::class, 'registerFile')) {
+            AnnotationRegistry::registerFile(
+                $path . '/DataMapping/Annotations.php'
+            );
+            AnnotationRegistry::registerFile(
+                $path . '/Service/SortingFieldAnnotations.php'
+            );
+        }
     }
 
     public function build(ContainerBuilder $container)
