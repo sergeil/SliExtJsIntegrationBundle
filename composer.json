@@ -28,10 +28,17 @@
     "autoload": {
         "psr-4": {
             "Sli\\ExtJsIntegrationBundle\\": ""
-        }
+        },
+        "classmap": [ "DataMapping/Annotations.php", "Service/SortingFieldAnnotations.php" ],
+        "exclude-from-classmap": [
+            "/Tests/"
+        ]
     },
     "autoload-dev": {
-        "classmap": [
+        "psr-4": {
+            "Sli\\ExtJsIntegrationBundle\\Tests\\": "Tests"
+        },
+        "files": [
             "Tests/Fixtures/App/app/AppKernel.php"
         ]
     },
